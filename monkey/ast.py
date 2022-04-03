@@ -62,6 +62,15 @@ class BooleanLiteral(Expression):
 
 
 @dataclass
+class FunctionLiteral(Expression):
+    parameters: List[Identifier]
+    body: BlockStatement
+
+    def __str__(self):
+        return f"fn ({', '.join(str(p) for p in self.parameters)}) {str(self.body)}"
+
+
+@dataclass
 class PrefixExpression(Expression):
     operator: str # TODO Candidate for an Enum?
     right: Expression

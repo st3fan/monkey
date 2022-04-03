@@ -61,6 +61,7 @@ class Parser:
             TokenType.FALSE: self.parse_boolean_literal,
             TokenType.LPAREN: self.parse_grouped_expression,
             TokenType.IF: self.parse_if_expression,
+            TokenType.FUNCTION: self.parse_function_literal,
         }
 
         self.infix_parse_fns = {
@@ -149,6 +150,31 @@ class Parser:
                             return None
                         if_expression.alternative = self.parse_block_statement()
                     return if_expression
+
+    def parse_function_parameters(self) -> List[Identifier]:
+        parameters: List[Identifier] = []
+        if self.peek_token.type == TokenType.RPAREN:
+            self.next_token()
+            return parameters
+        self.next_token()
+
+        parameters.append(Identifier(self.current_token.literal))
+
+        while self.peek_token.type == TokenType.COMMA:
+            self.next_token()
+            self.next_token()
+            parameters.append(Identifier(self.current_token.literal))
+
+        if self.expect_peek(TokenType.RPAREN):
+            return parameters
+
+
+    def parse_function_literal(self) -> FunctionLiteral:
+        if self.expect_peek(TokenType.LPAREN):
+            parameters = self.parse_function_parameters()
+            if self.expect_peek(TokenType.LBRACE):
+                body = self.parse_block_statement()
+                return FunctionLiteral(parameters, body)
 
     def parse_identifier(self) -> Expression:
         return Identifier(self.current_token.literal)

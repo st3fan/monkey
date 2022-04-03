@@ -25,3 +25,10 @@ def test_str_if_statement():
 def test_str_if_expression():
     assert str(parse("let x = if (x < 3) { true };")) == "let x = if (x < 3) { true };"
     assert str(parse("let x = if (x < 3) { true } else { false };")) == "let x = if (x < 3) { true } else { false };"
+
+
+def test_str_function_literal():
+    assert str(parse("fn () { return 42; }")) == "fn () { return 42; }"
+    assert str(parse("fn (x) { return x + 1; }")) == "fn (x) { return (x + 1); }"
+    assert str(parse("fn (x, y) { return x + y; }")) == "fn (x, y) { return (x + y); }"
+    

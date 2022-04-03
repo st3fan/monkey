@@ -156,6 +156,17 @@ def test_boolean_literals():
         assert str(parse_program(expression)) == expression
 
 
+def test_function_literals():
+    expressions = [
+        "fn () { return true; }",
+        "fn (x) { return x + 1; }",
+        "fn (x, y) { return x + y; }",
+    ]
+    for expression in expressions:
+        program = parse_program(expression)
+        assert len(program.statements) == 1
+
+
 def test_if_expressions():
     expressions = [
         "if (x < y) { x }",
@@ -163,3 +174,14 @@ def test_if_expressions():
     ]
     for expression in expressions:
         assert str(parse_program(expression)) == expression
+
+def test_if_statements():
+    expressions = [
+        "if (x < y) { return x; }",
+        "if (x < y) { return x; } else { return y; }"
+    ]
+    for expression in expressions:
+        assert str(parse_program(expression)) == expression
+
+def test_block_statements():
+    pass # TODO
