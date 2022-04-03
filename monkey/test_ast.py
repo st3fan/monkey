@@ -16,3 +16,12 @@ def test_str_let():
 def test_str_return():
     assert str(parse("return 42;")) == "return 42;"
     assert str(parse("return foo;")) == "return foo;"
+
+
+def test_str_if_statement():
+    assert str(parse("if (x < 3) { return true; }")) == "if (x < 3) { return true; }"
+    assert str(parse("if (x < 3) { return true; } else { return false; }")) == "if (x < 3) { return true; } else { return false; }"
+
+def test_str_if_expression():
+    assert str(parse("let x = if (x < 3) { true };")) == "let x = if (x < 3) { true };"
+    assert str(parse("let x = if (x < 3) { true } else { false };")) == "let x = if (x < 3) { true } else { false };"

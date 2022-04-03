@@ -154,3 +154,12 @@ def test_boolean_literals():
     ]
     for expression in expressions:
         assert str(parse_program(expression)) == expression
+
+
+def test_if_expressions():
+    expressions = [
+        "if (x < y) { x }",
+        "if (x < y) { x } else { y }"
+    ]
+    for expression in expressions:
+        assert str(parse_program(expression)) == expression

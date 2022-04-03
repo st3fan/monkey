@@ -1,14 +1,15 @@
 
 
 from enum import IntEnum
+from sre_constants import NOT_LITERAL
 from typing import Callable, Dict, List, Optional, TypeAlias
 
-from monkey.ast import BooleanLiteral, ExpressionStatement, InfixExpression, IntegerLiteral, PrefixExpression, Program, Statement, LetStatement, IfStatement, ReturnStatement, Expression, Identifier
+from monkey.ast import *
 from monkey.lexer import Lexer
 from monkey.token import Token, TokenType
 
 
-class ExpressionPrecedence(IntEnum):
+class OperatorPrecedence(IntEnum):
     LOWEST = 0
     EQUALS = 1          # ==
     LESSGREATER = 2     # > or <
@@ -19,14 +20,14 @@ class ExpressionPrecedence(IntEnum):
 
 
 TOKEN_PRECEDENCES = {
-    TokenType.EQ:       ExpressionPrecedence.EQUALS,
-    TokenType.NOT_EQ:   ExpressionPrecedence.EQUALS,
-    TokenType.LT:       ExpressionPrecedence.LESSGREATER,
-    TokenType.GT:       ExpressionPrecedence.LESSGREATER,
-    TokenType.PLUS:     ExpressionPrecedence.SUM,
-    TokenType.MINUS:    ExpressionPrecedence.SUM,
-    TokenType.SLASH:    ExpressionPrecedence.PRODUCT,
-    TokenType.ASTERISK: ExpressionPrecedence.PRODUCT,
+    TokenType.EQ:       OperatorPrecedence.EQUALS,
+    TokenType.NOT_EQ:   OperatorPrecedence.EQUALS,
+    TokenType.LT:       OperatorPrecedence.LESSGREATER,
+    TokenType.GT:       OperatorPrecedence.LESSGREATER,
+    TokenType.PLUS:     OperatorPrecedence.SUM,
+    TokenType.MINUS:    OperatorPrecedence.SUM,
+    TokenType.SLASH:    OperatorPrecedence.PRODUCT,
+    TokenType.ASTERISK: OperatorPrecedence.PRODUCT,
 }
 
 
@@ -59,6 +60,7 @@ class Parser:
             TokenType.TRUE: self.parse_boolean_literal,
             TokenType.FALSE: self.parse_boolean_literal,
             TokenType.LPAREN: self.parse_grouped_expression,
+            TokenType.IF: self.parse_if_expression,
         }
 
         self.infix_parse_fns = {
@@ -89,11 +91,11 @@ class Parser:
     def peek_error(self, token_type: TokenType):
         self.errors.append(f"expected next token to be {token_type}, got {self.peek_token.type} instead")
 
-    def peek_precedence(self) -> ExpressionPrecedence:
-        return TOKEN_PRECEDENCES.get(self.peek_token.type, ExpressionPrecedence.LOWEST)
+    def peek_precedence(self) -> OperatorPrecedence:
+        return TOKEN_PRECEDENCES.get(self.peek_token.type, OperatorPrecedence.LOWEST)
 
-    def current_precedence(self) -> ExpressionPrecedence:
-        return TOKEN_PRECEDENCES.get(self.current_token.type, ExpressionPrecedence.LOWEST)
+    def current_precedence(self) -> OperatorPrecedence:
+        return TOKEN_PRECEDENCES.get(self.current_token.type, OperatorPrecedence.LOWEST)
 
     def parse_program(self) -> Program:
         program = Program()
@@ -109,9 +111,16 @@ class Parser:
                 return self.parse_let_statement()
             case TokenType.RETURN:
                 return self.parse_return_statement()
-            case TokenType.IF:
-                return self.parse_if_statement()
         return self.parse_expression_statement()
+
+    def parse_block_statement(self) -> BlockStatement:
+        block_statement = BlockStatement([])
+        self.next_token()
+        while not self.current_token.type == TokenType.RBRACE and not self.current_token.type == TokenType.EOF:
+            if statement := self.parse_statement():
+                block_statement.statements.append(statement)
+            self.next_token()
+        return block_statement
 
     def parse_let_statement(self) -> Optional[LetStatement]:
         if self.expect_peek(TokenType.IDENT):
@@ -126,8 +135,20 @@ class Parser:
         if expression := self.parse_expression_statement():
             return ReturnStatement(expression)
 
-    def parse_if_statement(self) -> Optional[IfStatement]:
-        return None
+    def parse_if_expression(self) -> Optional[IfExpression]:
+        if self.expect_peek(TokenType.LPAREN):
+            self.next_token()
+            condition = self.parse_expression(OperatorPrecedence.LOWEST)
+            if self.expect_peek(TokenType.RPAREN):
+                if self.expect_peek(TokenType.LBRACE):
+                    consequence = self.parse_block_statement()
+                    if_expression = IfExpression(condition, consequence, None)
+                    if self.peek_token.type == TokenType.ELSE:
+                        self.next_token()
+                        if not self.expect_peek(TokenType.LBRACE):
+                            return None
+                        if_expression.alternative = self.parse_block_statement()
+                    return if_expression
 
     def parse_identifier(self) -> Expression:
         return Identifier(self.current_token.literal)
@@ -142,14 +163,14 @@ class Parser:
 
     def parse_grouped_expression(self) -> Optional[Expression]:
         self.next_token()
-        expression = self.parse_expression(ExpressionPrecedence.LOWEST)
+        expression = self.parse_expression(OperatorPrecedence.LOWEST)
         if self.expect_peek(TokenType.RPAREN):
             return expression
 
     def parse_prefix_expression(self) -> PrefixExpression:
         operator = self.current_token.literal
         self.next_token()
-        expression = self.parse_expression(ExpressionPrecedence.PREFIX)
+        expression = self.parse_expression(OperatorPrecedence.PREFIX)
         return PrefixExpression(operator, expression)
 
     def parse_infix_expression(self, left: Expression) -> InfixExpression:
@@ -159,7 +180,7 @@ class Parser:
         right = self.parse_expression(precedence)
         return InfixExpression(left, operator, right)
 
-    def parse_expression(self, precedence: ExpressionPrecedence):
+    def parse_expression(self, precedence: OperatorPrecedence):
         if (prefix_fn := self.prefix_parse_fns.get(self.current_token.type)) is None:
             return None
         left = prefix_fn()
@@ -171,7 +192,7 @@ class Parser:
         return left
 
     def parse_expression_statement(self) -> Optional[ExpressionStatement]:
-        statement = ExpressionStatement(self.parse_expression(ExpressionPrecedence.LOWEST))
+        statement = ExpressionStatement(self.parse_expression(OperatorPrecedence.LOWEST))
         # Ending a statement with a semicolon is optional
         if self.peek_token.type == TokenType.SEMICOLON:
             self.next_token()

@@ -6,10 +6,30 @@ from typing import Callable, List, Optional, TypeAlias
 from monkey.token import Token, TokenType
 
 
-# I don't think we really need a base class? Yet? Or maybe not at all? I think this may be useful for common debugging or if we really need to keep a Token around, like to keep track of where in the source input we found this.
+# I don't think we really need a base class? Yet? Or maybe not at all? I think this may
+# be useful for common debugging or if we really need to keep a Token around, like to
+# keep track of where in the source input we found this.
+#
 # @dataclass
 # class Node:
 #     pass
+
+
+@dataclass
+class Statement:
+    pass
+
+
+@dataclass
+class BlockStatement(Statement):
+    statements: List[Statement]
+
+    def __str__(self):
+        s = "{ "
+        for statement in self.statements:
+            s += str(statement)
+        s += " }"
+        return s
 
 
 @dataclass
@@ -61,8 +81,16 @@ class InfixExpression(Expression):
 
 
 @dataclass
-class Statement:
-    pass
+class IfExpression(Expression):
+    condition: Expression
+    consequence: BlockStatement
+    alternative: Optional[BlockStatement]
+
+    def __str__(self):
+        s = f"if {str(self.condition)} {str(self.consequence)}"
+        if self.alternative:
+            s += f" else {str(self.alternative)}"
+        return s
 
 
 @dataclass
@@ -100,8 +128,3 @@ class ReturnStatement(Statement):
 
     def __str__(self):
         return f"return {str(self.value)};"
-
-
-@dataclass
-class IfStatement(Statement):
-    pass
