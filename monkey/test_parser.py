@@ -175,6 +175,7 @@ def test_if_expressions():
     for expression in expressions:
         assert str(parse_program(expression)) == expression
 
+
 def test_if_statements():
     expressions = [
         "if (x < y) { return x; }",
@@ -182,6 +183,7 @@ def test_if_statements():
     ]
     for expression in expressions:
         assert str(parse_program(expression)) == expression
+
 
 def test_block_statements():
     pass # TODO

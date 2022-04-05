@@ -31,4 +31,9 @@ def test_str_function_literal():
     assert str(parse("fn () { return 42; }")) == "fn () { return 42; }"
     assert str(parse("fn (x) { return x + 1; }")) == "fn (x) { return (x + 1); }"
     assert str(parse("fn (x, y) { return x + y; }")) == "fn (x, y) { return (x + y); }"
-    
+
+def test_str_call_expression():
+    assert str(parse("add(1, 2 * 3, 4 + 5)")) == "add(1, (2 * 3), (4 + 5))"
+    assert str(parse("foo(1, 2, 3)")) == "foo(1, 2, 3)"
+    assert str(parse("bar()")) == "bar()"
+    assert str(parse("foo(2 * 3, 4 + 5)")) == "foo((2 * 3), (4 + 5))"

@@ -28,6 +28,7 @@ TOKEN_PRECEDENCES = {
     TokenType.MINUS:    OperatorPrecedence.SUM,
     TokenType.SLASH:    OperatorPrecedence.PRODUCT,
     TokenType.ASTERISK: OperatorPrecedence.PRODUCT,
+    TokenType.LPAREN:   OperatorPrecedence.CALL,
 }
 
 
@@ -73,6 +74,7 @@ class Parser:
             TokenType.NOT_EQ: self.parse_infix_expression,
             TokenType.LT: self.parse_infix_expression,
             TokenType.GT: self.parse_infix_expression,
+            TokenType.LPAREN: self.parse_call_expression,
         }
 
         self.next_token()
@@ -205,6 +207,27 @@ class Parser:
         self.next_token()
         right = self.parse_expression(precedence)
         return InfixExpression(left, operator, right)
+
+    def parse_call_arguments(self) -> Optional[List[Expression]]:
+        arguments: List[Expression] = []
+        if self.peek_token.type == TokenType.RPAREN:
+            self.next_token()
+            return arguments
+
+        self.next_token()
+        arguments.append(self.parse_expression(OperatorPrecedence.LOWEST))
+
+        while self.peek_token.type == TokenType.COMMA:
+            self.next_token()
+            self.next_token()
+            arguments.append(self.parse_expression(OperatorPrecedence.LOWEST))
+
+        if self.expect_peek(TokenType.RPAREN):
+            return arguments
+
+
+    def parse_call_expression(self, left: Union[Identifier, FunctionLiteral]) -> CallExpression:
+        return CallExpression(left, self.parse_call_arguments())
 
     def parse_expression(self, precedence: OperatorPrecedence):
         if (prefix_fn := self.prefix_parse_fns.get(self.current_token.type)) is None:

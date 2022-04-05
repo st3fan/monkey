@@ -1,7 +1,7 @@
 
 
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional, TypeAlias
+from typing import Callable, List, Optional, TypeAlias, Union
 
 from monkey.token import Token, TokenType
 
@@ -68,6 +68,15 @@ class FunctionLiteral(Expression):
 
     def __str__(self):
         return f"fn ({', '.join(str(p) for p in self.parameters)}) {str(self.body)}"
+
+
+@dataclass
+class CallExpression(Expression):
+    function: Union[Identifier, FunctionLiteral] # TODO NamedCallExpression vs FunctionLiteralCallExpression?
+    arguments: List[Expression]
+
+    def __str__(self):
+        return f"{str(self.function)}({', '.join(str(p) for p in self.arguments)})"
 
 
 @dataclass
