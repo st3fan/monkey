@@ -1,3 +1,6 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
 from dataclasses import dataclass, field
@@ -6,17 +9,13 @@ from typing import Callable, List, Optional, TypeAlias, Union
 from monkey.token import Token, TokenType
 
 
-# I don't think we really need a base class? Yet? Or maybe not at all? I think this may
-# be useful for common debugging or if we really need to keep a Token around, like to
-# keep track of where in the source input we found this.
-#
-# @dataclass
-# class Node:
-#     pass
+@dataclass
+class Node:
+    pass
 
 
 @dataclass
-class Statement:
+class Statement(Node):
     pass
 
 
@@ -33,7 +32,7 @@ class BlockStatement(Statement):
 
 
 @dataclass
-class Expression:
+class Expression(Node): # TODO Is an expression a Node or a Statement?
     pass
 
 
@@ -120,7 +119,7 @@ class ExpressionStatement(Statement):
 
 
 @dataclass
-class Program:
+class Program(Node):
     statements: List[Statement] = field(default_factory=list)
 
     def __str__(self):
