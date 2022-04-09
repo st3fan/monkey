@@ -11,6 +11,7 @@ class ObjectType(Enum):
     INTEGER = "INTEGER"
     BOOLEAN = "BOOLEAN"
     NULL = "NULL"
+    RETURN_VALUE = "RETURN_VALUE"
 
 
 class Object:
@@ -44,3 +45,12 @@ class Null(Object):
         return ObjectType.NULL
     def __str__(self) -> str:
         return "null"
+
+
+@dataclass
+class ReturnValue(Object):
+    value: Object
+    def type(self) -> ObjectType:
+        return ObjectType.RETURN_VALUE
+    def __str__(self) -> str:
+        return str(self.value)

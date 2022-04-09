@@ -6,8 +6,8 @@
 from operator import truediv
 from typing import List, Optional
 
-from monkey.ast import BooleanLiteral, Expression, IfExpression, InfixExpression, Node, IntegerLiteral, PrefixExpression, Program, Statement, ExpressionStatement, BlockStatement
-from monkey.object import Object, Integer, Boolean, Null, ObjectType
+from monkey.ast import BooleanLiteral, Expression, IfExpression, InfixExpression, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement
+from monkey.object import Object, Integer, Boolean, Null, ObjectType, ReturnValue
 
 
 NULL = Null()
@@ -24,10 +24,20 @@ def is_truthy(object: Object) -> bool:
 
 
 class Evaluator:
-    def eval_statements(self, statements: List[Statement]) -> Object:
+    def eval_program(self, statements: List[Statement]) -> Object:
         result: Object = NULL
         for statement in statements:
             result = self.eval(statement)
+            if isinstance(result, ReturnValue):
+                return result.value
+        return result
+
+    def eval_block_statement(self, statements: List[Statement]) -> Object:
+        result: Object = NULL
+        for statement in statements:
+            result = self.eval(statement)
+            if isinstance(result, ReturnValue):
+                return result
         return result
 
     def eval_if_expression(self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement]) -> Object:
@@ -94,11 +104,14 @@ class Evaluator:
         match node:
             # Statements
             case Program(statements):
-                return self.eval_statements(statements)
+                return self.eval_program(statements)
             case ExpressionStatement(expression):
                 return self.eval(expression)
             case BlockStatement(statements):
-                return self.eval_statements(statements)
+                return self.eval_block_statement(statements)
+            case ReturnStatement(expression):
+                return ReturnValue(self.eval(expression))
+            # Expressions
             case IfExpression(condition, consequence, alternative):
                 return self.eval_if_expression(condition, consequence, alternative)
             # Literal Expressions

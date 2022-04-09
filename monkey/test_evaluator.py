@@ -70,3 +70,11 @@ def test_if_else_expressions():
     assert eval("if (1 > 2) { 10 }") == NULL
     assert eval("if (1 > 2) { 10 } else { 20 }") == Integer(20)
     assert eval("if (1 < 2) { 10 } else { 20 }") == Integer(10)
+
+
+def test_return_statements():
+    assert eval("return 10;") == Integer(10)
+    assert eval("return 10; 9;") == Integer(10)
+    assert eval("return 2 * 5; 9;") == Integer(10)
+    assert eval("9; return 2 * 5; 9;") == Integer(10)
+    assert eval("if (10 > 1) { if (10 > 1) { return 10; } return 1; }") == Integer(10)
