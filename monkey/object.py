@@ -5,6 +5,10 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import List
+
+from monkey.ast import Identifier, BlockStatement
+from monkey.environment import Environment
 
 
 class ObjectType(Enum):
@@ -13,6 +17,7 @@ class ObjectType(Enum):
     NULL = 2
     RETURN_VALUE = 3
     EVALUATION_ERROR = 4
+    FUNCTION = 5
 
 
 @dataclass
@@ -65,3 +70,14 @@ class EvaluationError(Object):
         return ObjectType.EVALUATION_ERROR.name
     def __str__(self) -> str:
         return self.message
+
+
+@dataclass
+class Function(Object):
+    parameters: List[Identifier]
+    body: BlockStatement
+    environment: Environment
+    def type(self) -> str:
+        return ObjectType.FUNCTION.name
+    def __str__(self) -> str:
+        return str(self) # TODO?

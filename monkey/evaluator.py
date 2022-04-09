@@ -3,11 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from monkey.ast import BooleanLiteral, Expression, IfExpression, InfixExpression, LetStatement, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement, Identifier
+from monkey.ast import BooleanLiteral, CallExpression, Expression, FunctionLiteral, IfExpression, InfixExpression, LetStatement, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement, Identifier
 from monkey.environment import Environment
-from monkey.object import EvaluationError, Object, Integer, Boolean, Null, ObjectType, ReturnValue
+from monkey.object import EvaluationError, Function, Object, Integer, Boolean, Null, ObjectType, ReturnValue
 
 
 NULL = Null()
@@ -21,6 +21,19 @@ def make_boolean(value: bool) -> Boolean:
 
 def is_truthy(object: Object) -> bool:
     return object not in (NULL, FALSE)
+
+
+def extend_function_env(function: Function, arguments: List[Object]) -> Environment:
+    env = Environment(outer=function.environment)
+    for i, parameter in enumerate(function.parameters):
+        env.set(parameter.value, arguments[i])
+    return env
+
+
+def unwrap_return_value(object: Object) -> Object:
+    if isinstance(object, ReturnValue):
+        return object.value
+    return object
 
 
 class Evaluator:
@@ -65,6 +78,15 @@ class Evaluator:
                 return TRUE
         return EvaluationError(f"unknown operator: {operator}{right.type()}")
 
+    def eval_expressions(self, expressions: List[Expression], environment: Environment) -> List[Object]:
+        results: List[Object] = []
+        for expression in expressions:
+            result = self.eval(expression, environment)
+            if isinstance(result, EvaluationError):
+                return [result]
+            results.append(result)
+        return results
+
     def eval_infix_expression(self, left: Object, operator: str, right: Object) -> Object:
         match (left, operator, right):
             case (left, "==", right):
@@ -91,6 +113,13 @@ class Evaluator:
                 return EvaluationError(f"unknown operator: {left.type()} {operator} {right.type()}")
         return EvaluationError(f"type mismatch: {left.type()} {operator} {right.type()}")
 
+    def apply_function(self, function: Object, arguments: List[Object]) -> Object:
+        if not isinstance(function, Function):
+            return EvaluationError(f"not a function: {function.type()}")
+        extended_env = extend_function_env(function, arguments)
+        evaluated = self.eval(function.body, extended_env)
+        return unwrap_return_value(evaluated)
+
     # TODO This is now a mix of code and eval_* methods. Straighten that out.
     def eval(self, node: Node, environment: Environment) -> Object:
         match node:
@@ -115,6 +144,18 @@ class Evaluator:
                 return Integer(value)
             case BooleanLiteral(value):
                 return make_boolean(value)
+            case FunctionLiteral(parameters, body):
+                return Function(parameters, body, environment)
+            
+            case CallExpression(function, arguments):
+                fn = self.eval(function, environment)
+                if isinstance(fn, EvaluationError):
+                    return fn
+                args = self.eval_expressions(arguments, environment)
+                if len(args) == 1 and isinstance(args[0], EvaluationError):
+                    return args[0]
+                return self.apply_function(fn, args)
+
             case Identifier(name):
                 if val := environment.get(name):
                     return val

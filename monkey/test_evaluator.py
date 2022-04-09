@@ -6,7 +6,7 @@
 from monkey.environment import Environment
 from monkey.evaluator import Evaluator, TRUE, FALSE, NULL
 from monkey.lexer import Lexer
-from monkey.object import Object, Integer, Boolean, Null, EvaluationError
+from monkey.object import Object, Integer, Null, EvaluationError, Function
 from monkey.parser import Parser
 
 
@@ -107,3 +107,17 @@ def test_let_statement():
 
 def test_identifier_error_handling():
     assert eval("nope") == EvaluationError("identifier not found: nope")
+
+
+def test_function_object():
+    function_object = eval("fn(x) { x + 2; };")
+    assert isinstance(function_object, Function)
+    # TODO Test all Function properties
+
+def test_eval_function():
+    assert eval("let identity = fn(x) { x; }; identity(5);") == Integer(5)
+    assert eval("let identity = fn(x) { return x; }; identity(5);") == Integer(5)
+    assert eval("let double = fn(x) { x * 2; }; double(5);") == Integer(10)
+    assert eval("let add = fn(x, y) { x + y; }; add(5, 5);") == Integer(10)
+    assert eval("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));") == Integer(20)
+    assert eval("fn(x) { x; }(5)") == Integer(5)

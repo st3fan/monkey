@@ -4,17 +4,22 @@
 
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
-from monkey.object import Object
-
+# TODO Used to import Object but that results in a circular dependency (Function.environment)
 
 @dataclass
 class Environment:
-    store: Dict[str, Object] = field(default_factory=dict)
+    outer: Any = field(default=None) # TODO How do we do this?
+    store: Dict[str, Any] = field(default_factory=dict) # TODO Should be private/internal
 
-    def get(self, name: str) -> Optional[Object]:
-        return self.store.get(name)
+    def get(self, name: str) -> Optional[Any]:
+        if object := self.store.get(name):
+            return object
+        if self.outer:
+            return self.outer.get(name)
+        return None
     
-    def set(self, name: str, object: Object):
+    def set(self, name: str, object: Any) -> Any:
         self.store[name] = object
+        return object
