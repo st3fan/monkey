@@ -8,14 +8,16 @@ from enum import Enum
 
 
 class ObjectType(Enum):
-    INTEGER = "INTEGER"
-    BOOLEAN = "BOOLEAN"
-    NULL = "NULL"
-    RETURN_VALUE = "RETURN_VALUE"
+    INTEGER = 0
+    BOOLEAN = 1
+    NULL = 2
+    RETURN_VALUE = 3
+    EVALUATION_ERROR = 4
 
 
+@dataclass
 class Object:
-    def type(self) -> ObjectType:
+    def type(self) -> str:
         raise NotImplementedError()
     def __str__(self) -> str:
         raise NotImplementedError()
@@ -24,8 +26,8 @@ class Object:
 @dataclass
 class Integer(Object):
     value: int
-    def type(self) -> ObjectType:
-        return ObjectType.INTEGER
+    def type(self) -> str:
+        return ObjectType.INTEGER.name
     def __str__(self) -> str:
         return str(self.value)
 
@@ -33,16 +35,16 @@ class Integer(Object):
 @dataclass
 class Boolean(Object):
     value: bool
-    def type(self) -> ObjectType:
-        return ObjectType.BOOLEAN
+    def type(self) -> str:
+        return ObjectType.BOOLEAN.name
     def __str__(self) -> str:
         return str(self.value)
 
 
 @dataclass
 class Null(Object):
-    def type(self) -> ObjectType:
-        return ObjectType.NULL
+    def type(self) -> str:
+        return ObjectType.NULL.name
     def __str__(self) -> str:
         return "null"
 
@@ -50,7 +52,16 @@ class Null(Object):
 @dataclass
 class ReturnValue(Object):
     value: Object
-    def type(self) -> ObjectType:
-        return ObjectType.RETURN_VALUE
+    def type(self) -> str:
+        return ObjectType.RETURN_VALUE.name
     def __str__(self) -> str:
         return str(self.value)
+
+
+@dataclass
+class EvaluationError(Object):
+    message: str
+    def type(self) -> str:
+        return ObjectType.EVALUATION_ERROR.name
+    def __str__(self) -> str:
+        return self.message

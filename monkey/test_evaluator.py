@@ -5,7 +5,7 @@
 
 from monkey.evaluator import Evaluator, TRUE, FALSE, NULL
 from monkey.lexer import Lexer
-from monkey.object import Object, Integer, Boolean, Null
+from monkey.object import Object, Integer, Boolean, Null, EvaluationError
 from monkey.parser import Parser
 
 
@@ -78,3 +78,19 @@ def test_return_statements():
     assert eval("return 2 * 5; 9;") == Integer(10)
     assert eval("9; return 2 * 5; 9;") == Integer(10)
     assert eval("if (10 > 1) { if (10 > 1) { return 10; } return 1; }") == Integer(10)
+
+
+def test_prefix_error_handling():
+    assert eval("-true") == EvaluationError("unknown operator: -BOOLEAN")
+    assert eval("-true; 5;") == EvaluationError("unknown operator: -BOOLEAN")
+    assert eval("return -true;") == EvaluationError("unknown operator: -BOOLEAN")
+    assert eval("if (10 > 1) { return -true; }") == EvaluationError("unknown operator: -BOOLEAN")
+
+
+def test_infix_error_handling():
+    assert eval("5 + true") == EvaluationError("type mismatch: INTEGER + BOOLEAN")
+    assert eval("5 + true; 5") == EvaluationError("type mismatch: INTEGER + BOOLEAN")
+    assert eval("true + false") == EvaluationError("unknown operator: BOOLEAN + BOOLEAN")
+    assert eval("true + false; 5;") == EvaluationError("unknown operator: BOOLEAN + BOOLEAN")
+    assert eval("if (10 > 1) { true + false; }") == EvaluationError("unknown operator: BOOLEAN + BOOLEAN")
+    assert eval("if (10 > 1) { if (10 > 1) { return true + false; } return 1; }") == EvaluationError("unknown operator: BOOLEAN + BOOLEAN")
