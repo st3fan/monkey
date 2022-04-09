@@ -60,3 +60,13 @@ def test_bang_operator():
     assert eval("!0") is TRUE
     assert eval("!1") is FALSE
     assert eval("!3") is FALSE
+
+
+def test_if_else_expressions():
+    assert eval("if (true) { 10 }") == Integer(10)
+    assert eval("if (false) { 10 }") == NULL
+    assert eval("if (1) { 10 }") == Integer(10)
+    assert eval("if (1 < 2) { 10 }") == Integer(10)
+    assert eval("if (1 > 2) { 10 }") == NULL
+    assert eval("if (1 > 2) { 10 } else { 20 }") == Integer(20)
+    assert eval("if (1 < 2) { 10 } else { 20 }") == Integer(10)

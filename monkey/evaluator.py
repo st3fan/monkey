@@ -3,9 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
+from operator import truediv
 from typing import List, Optional
 
-from monkey.ast import BooleanLiteral, Expression, InfixExpression, Node, IntegerLiteral, PrefixExpression, Program, Statement, ExpressionStatement
+from monkey.ast import BooleanLiteral, Expression, IfExpression, InfixExpression, Node, IntegerLiteral, PrefixExpression, Program, Statement, ExpressionStatement, BlockStatement
 from monkey.object import Object, Integer, Boolean, Null, ObjectType
 
 
@@ -18,12 +19,23 @@ def make_boolean(value: bool) -> Boolean:
     return TRUE if value else FALSE
 
 
+def is_truthy(object: Object) -> bool:
+    return object not in (NULL, FALSE)
+
+
 class Evaluator:
     def eval_statements(self, statements: List[Statement]) -> Object:
         result: Object = NULL
         for statement in statements:
             result = self.eval(statement)
         return result
+
+    def eval_if_expression(self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement]) -> Object:
+        if is_truthy(self.eval(condition)):
+            return self.eval(consequence)
+        elif alternative is not None:
+            return self.eval(alternative)
+        return NULL
 
     def eval_prefix_bang_operator_expression(self, object: Object) -> Object:
         match object:
@@ -85,6 +97,10 @@ class Evaluator:
                 return self.eval_statements(statements)
             case ExpressionStatement(expression):
                 return self.eval(expression)
+            case BlockStatement(statements):
+                return self.eval_statements(statements)
+            case IfExpression(condition, consequence, alternative):
+                return self.eval_if_expression(condition, consequence, alternative)
             # Literal Expressions
             case IntegerLiteral(value):
                 return Integer(value)
