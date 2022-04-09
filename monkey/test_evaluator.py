@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
+from monkey.environment import Environment
 from monkey.evaluator import Evaluator, TRUE, FALSE, NULL
 from monkey.lexer import Lexer
 from monkey.object import Object, Integer, Boolean, Null, EvaluationError
@@ -10,7 +11,8 @@ from monkey.parser import Parser
 
 
 def eval(program: str) -> Object:
-    return Evaluator().eval(Parser(Lexer(program)).parse_program())
+    environment = Environment()
+    return Evaluator().eval(Parser(Lexer(program)).parse_program(),environment)
 
 
 def test_eval_integer_expression():
@@ -94,3 +96,14 @@ def test_infix_error_handling():
     assert eval("true + false; 5;") == EvaluationError("unknown operator: BOOLEAN + BOOLEAN")
     assert eval("if (10 > 1) { true + false; }") == EvaluationError("unknown operator: BOOLEAN + BOOLEAN")
     assert eval("if (10 > 1) { if (10 > 1) { return true + false; } return 1; }") == EvaluationError("unknown operator: BOOLEAN + BOOLEAN")
+
+
+def test_let_statement():
+    assert eval("let a = 5; a;") == Integer(5)
+    assert eval("let a = 5 * 5; a;") == Integer(25)
+    assert eval("let a = 5; let b = a; b;") == Integer(5)
+    assert eval("let a = 5; let b = a; let c = a + b + 5; c;") == Integer(15)
+
+
+def test_identifier_error_handling():
+    assert eval("nope") == EvaluationError("identifier not found: nope")

@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from operator import truediv
 from typing import List, Optional
 
-from monkey.ast import BooleanLiteral, Expression, IfExpression, InfixExpression, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement
+from monkey.ast import BooleanLiteral, Expression, IfExpression, InfixExpression, LetStatement, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement, Identifier
+from monkey.environment import Environment
 from monkey.object import EvaluationError, Object, Integer, Boolean, Null, ObjectType, ReturnValue
 
 
@@ -24,29 +24,33 @@ def is_truthy(object: Object) -> bool:
 
 
 class Evaluator:
-    def eval_program(self, statements: List[Statement]) -> Object:
+    def eval_program(self, statements: List[Statement], environment: Environment) -> Object:
         result: Object = NULL
         for statement in statements:
-            result = self.eval(statement)
+            result = self.eval(statement, environment)
             if isinstance(result, ReturnValue):
                 return result.value
             if isinstance(result, EvaluationError):
                 return result
         return result
 
-    def eval_block_statement(self, statements: List[Statement]) -> Object:
+    def eval_block_statement(self, statements: List[Statement], environment: Environment) -> Object:
         result: Object = NULL
         for statement in statements:
-            result = self.eval(statement)
+            result = self.eval(statement, environment)
             if isinstance(result, ReturnValue) or isinstance(result, EvaluationError):
                 return result
         return result
 
-    def eval_if_expression(self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement]) -> Object:
-        if is_truthy(self.eval(condition)):
-            return self.eval(consequence)
+    def eval_let_statement(self, identifier: str, value: Object, environment: Environment) -> Object:
+        environment.set(identifier, value)
+        return NULL # Needed?
+
+    def eval_if_expression(self, condition: Expression, consequence: BlockStatement, alternative: Optional[BlockStatement], environment: Environment) -> Object:
+        if is_truthy(self.eval(condition, environment)):
+            return self.eval(consequence, environment)
         elif alternative is not None:
-            return self.eval(alternative)
+            return self.eval(alternative, environment)
         return NULL
 
     def eval_prefix_expression(self, operator: str, right: Object) -> Object:
@@ -87,57 +91,45 @@ class Evaluator:
                 return EvaluationError(f"unknown operator: {left.type()} {operator} {right.type()}")
         return EvaluationError(f"type mismatch: {left.type()} {operator} {right.type()}")
 
-    def eval(self, node: Node) -> Object:
+    # TODO This is now a mix of code and eval_* methods. Straighten that out.
+    def eval(self, node: Node, environment: Environment) -> Object:
         match node:
             # Statements
             case Program(statements):
-                return self.eval_program(statements)
+                return self.eval_program(statements, environment)
             case ExpressionStatement(expression):
-                return self.eval(expression)
+                return self.eval(expression, environment)
             case BlockStatement(statements):
-                return self.eval_block_statement(statements)
+                return self.eval_block_statement(statements, environment)
             case ReturnStatement(expression):
-                return ReturnValue(self.eval(expression))
+                return ReturnValue(self.eval(expression, environment))
+            case LetStatement(identifier, expression):
+                value = self.eval(expression, environment)
+                if isinstance(value, EvaluationError):
+                    return value
+                return self.eval_let_statement(identifier.value, value, environment)
             # Expressions
             case IfExpression(condition, consequence, alternative):
-                return self.eval_if_expression(condition, consequence, alternative)
-            # Literal Expressions
+                return self.eval_if_expression(condition, consequence, alternative, environment)
             case IntegerLiteral(value):
                 return Integer(value)
             case BooleanLiteral(value):
                 return make_boolean(value)
-            
-            # Expressions
+            case Identifier(name):
+                if val := environment.get(name):
+                    return val
+                return EvaluationError(f"identifier not found: {name}")
             case PrefixExpression(operator, right_expression):
-                right = self.eval(right_expression)
+                right = self.eval(right_expression, environment)
                 if isinstance(right, EvaluationError):
                     return right
-                return self.eval_prefix_expression(operator, right)
-            
+                return self.eval_prefix_expression(operator, right)            
             case InfixExpression(left_expression, operator, right_expression):
-                left = self.eval(left_expression)
+                left = self.eval(left_expression, environment)
                 if isinstance(left, EvaluationError):
                     return left
-                right = self.eval(right_expression)
+                right = self.eval(right_expression, environment)
                 if isinstance(right, EvaluationError):
                     return right
                 return self.eval_infix_expression(left, operator, right)
-
-            # Infix Expressions
-            # case InfixExpression(left, "+", right):
-            #     return self.eval_infix_plus_operator_expression(self.eval(left), self.eval(right))
-            # case InfixExpression(left, "-", right):
-            #     return self.eval_infix_minus_operator_expression(self.eval(left), self.eval(right))
-            # case InfixExpression(left, "*", right):
-            #     return self.eval_infix_star_operator_expression(self.eval(left), self.eval(right))
-            # case InfixExpression(left, "/", right):
-            #     return self.eval_infix_slash_operator_expression(self.eval(left), self.eval(right))
-            # case InfixExpression(left, "<", right):
-            #     return self.eval_infix_lt_operator_expression(self.eval(left), self.eval(right))
-            # case InfixExpression(left, ">", right):
-            #     return self.eval_infix_gt_operator_expression(self.eval(left), self.eval(right))
-            # case InfixExpression(left, "==", right):
-            #     return self.eval_infix_eq_operator_expression(self.eval(left), self.eval(right))
-            # case InfixExpression(left, "!=", right):
-            #     return self.eval_infix_ne_operator_expression(self.eval(left), self.eval(right))
         return NULL
