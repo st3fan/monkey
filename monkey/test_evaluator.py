@@ -121,3 +121,8 @@ def test_eval_function():
     assert eval("let add = fn(x, y) { x + y; }; add(5, 5);") == Integer(10)
     assert eval("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));") == Integer(20)
     assert eval("fn(x) { x; }(5)") == Integer(5)
+
+
+def test_closures():
+    assert eval("let newAdder = fn(x) { fn(y) { x + y }; }; let addTwo = newAdder(2); addTwo(2);") == Integer(4)
+    assert eval("let v = 21; let foo = fn(x) { v*x }; foo(2);")  == Integer(42)
