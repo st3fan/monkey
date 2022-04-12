@@ -5,7 +5,8 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
+from types import BuiltinFunctionType
+from typing import Callable, List
 
 from monkey.ast import Identifier, BlockStatement
 from monkey.environment import Environment
@@ -19,6 +20,7 @@ class ObjectType(Enum):
     EVALUATION_ERROR = 4
     FUNCTION = 5
     STRING = 6
+    BUILTIN = 7
 
 
 @dataclass
@@ -91,3 +93,17 @@ class String(Object):
         return ObjectType.STRING.name
     def __str__(self) -> str:
         return str(self.value)
+
+
+@dataclass
+class Builtin(Object):
+    value: Callable
+    def type(self) -> str:
+        return ObjectType.BUILTIN.name
+    def __str__(self) -> str:
+        return "builtin function" # TODO Can we do something nicer here?
+
+
+NULL = Null()
+TRUE = Boolean(True)
+FALSE = Boolean(False)

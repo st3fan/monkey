@@ -6,13 +6,9 @@
 from typing import List, Optional, Union
 
 from monkey.ast import BooleanLiteral, CallExpression, Expression, FunctionLiteral, IfExpression, InfixExpression, LetStatement, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement, Identifier, StringLiteral
+from monkey.builtins import BUILTINS
 from monkey.environment import Environment
-from monkey.object import EvaluationError, Function, Object, Integer, Boolean, Null, ObjectType, ReturnValue, String
-
-
-NULL = Null()
-TRUE = Boolean(True)
-FALSE = Boolean(False)
+from monkey.object import Builtin, EvaluationError, Function, Object, Integer, Boolean, Null, ReturnValue, String, NULL, TRUE, FALSE
 
 
 def make_boolean(value: bool) -> Boolean:
@@ -123,12 +119,15 @@ class Evaluator:
                 return EvaluationError(f"unknown operator: {left.type()} {operator} {right.type()}")
         return EvaluationError(f"type mismatch: {left.type()} {operator} {right.type()}")
 
-    def apply_function(self, function: Object, arguments: List[Object]) -> Object:
-        if not isinstance(function, Function):
-            return EvaluationError(f"not a function: {function.type()}")
-        extended_env = extend_function_env(function, arguments)
-        evaluated = self.eval(function.body, extended_env)
-        return unwrap_return_value(evaluated)
+    def apply_function(self, function: Union[Builtin, Function], arguments: List[Object]) -> Object:
+        # TODO Should be a match
+        if isinstance(function, Builtin):
+            return function.value(arguments)
+        if isinstance(function, Function):
+            extended_env = extend_function_env(function, arguments)
+            evaluated = self.eval(function.body, extended_env)
+            return unwrap_return_value(evaluated)
+        return EvaluationError(f"not a function: {function}") # TODO Fix
 
     # TODO This is now a mix of code and eval_* methods. Straighten that out.
     def eval(self, node: Node, environment: Environment) -> Object:
@@ -171,6 +170,8 @@ class Evaluator:
             case Identifier(name):
                 if val := environment.get(name):
                     return val
+                if builtin := BUILTINS.get(name):
+                    return builtin
                 return EvaluationError(f"identifier not found: {name}")
             case PrefixExpression(operator, right_expression):
                 right = self.eval(right_expression, environment)
