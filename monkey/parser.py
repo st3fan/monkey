@@ -59,6 +59,7 @@ class Parser:
         self.prefix_parse_fns = {
             TokenType.IDENT: self.parse_identifier,
             TokenType.INT: self.parse_integer_literal,
+            TokenType.STRING: self.parse_string_literal,
             TokenType.MINUS: self.parse_prefix_expression,
             TokenType.BANG: self.parse_prefix_expression,
             TokenType.TRUE: self.parse_boolean_literal,
@@ -187,6 +188,9 @@ class Parser:
     def parse_integer_literal(self) -> IntegerLiteral:
         # TODO Error Handling - See Book
         return IntegerLiteral(int(self.current_token.literal))
+
+    def parse_string_literal(self) -> StringLiteral:
+        return StringLiteral(self.current_token.literal)
 
     def parse_boolean_literal(self) -> BooleanLiteral:
         # TODO Error Handling - See Book

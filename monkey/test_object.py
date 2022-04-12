@@ -13,5 +13,3 @@ from monkey.parser import Parser
 def eval(program: str) -> Object:
     environment = Environment()
     return Evaluator().eval(Parser(Lexer(program)).parse_program(),environment)
-
-

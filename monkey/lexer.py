@@ -38,6 +38,15 @@ class Lexer:
             self.read_char()
         return self.input[position:self.position]
 
+    def read_string(self) -> str:
+        # This only works with "simple" strings
+        position = self.position + 1
+        while True:
+            self.read_char()
+            if self.ch is None or self.ch == '"':
+                break
+        return self.input[position:self.position]
+
     def skip_whitespace(self):
         while self.ch is not None and self.ch.isspace():
             self.read_char()
@@ -92,6 +101,8 @@ class Lexer:
                 tok = Token(TokenType.PLUS, self.ch)
             case TokenType.MINUS.value:
                 tok = Token(TokenType.MINUS, self.ch)
+            case '"':
+                tok = Token(TokenType.STRING, self.read_string())
             case None:
                 tok = Token(TokenType.EOF, "")
             case _:

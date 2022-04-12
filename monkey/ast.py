@@ -61,6 +61,14 @@ class BooleanLiteral(Expression):
 
 
 @dataclass
+class StringLiteral(Expression):
+    value: str
+
+    def __str__(self):
+        return '"' + self.value + '"'
+
+
+@dataclass
 class FunctionLiteral(Expression):
     parameters: List[Identifier]
     body: BlockStatement

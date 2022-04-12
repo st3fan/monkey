@@ -5,9 +5,9 @@
 
 from typing import List, Optional, Union
 
-from monkey.ast import BooleanLiteral, CallExpression, Expression, FunctionLiteral, IfExpression, InfixExpression, LetStatement, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement, Identifier
+from monkey.ast import BooleanLiteral, CallExpression, Expression, FunctionLiteral, IfExpression, InfixExpression, LetStatement, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement, Identifier, StringLiteral
 from monkey.environment import Environment
-from monkey.object import EvaluationError, Function, Object, Integer, Boolean, Null, ObjectType, ReturnValue
+from monkey.object import EvaluationError, Function, Object, Integer, Boolean, Null, ObjectType, ReturnValue, String
 
 
 NULL = Null()
@@ -109,6 +109,16 @@ class Evaluator:
                         return make_boolean(left_value > right_value)
                     case _:
                         return EvaluationError(f"unknown operator: {left.type()} {operator} {right.type()}")
+            case (String(left_value), _, String(right_value)):
+                match operator:
+                    case "+":
+                        return String(left_value + right_value)
+                    case "<":
+                        return make_boolean(left_value < right_value)
+                    case ">":
+                        return make_boolean(left_value > right_value)
+                    case _:
+                        return EvaluationError(f"unknown operator: {left.type()} {operator} {right.type()}")
             case (Boolean(left_value), _, Boolean(right_value)):
                 return EvaluationError(f"unknown operator: {left.type()} {operator} {right.type()}")
         return EvaluationError(f"type mismatch: {left.type()} {operator} {right.type()}")
@@ -142,6 +152,8 @@ class Evaluator:
                 return self.eval_if_expression(condition, consequence, alternative, environment)
             case IntegerLiteral(value):
                 return Integer(value)
+            case StringLiteral(value):
+                return String(value)
             case BooleanLiteral(value):
                 return make_boolean(value)
             case FunctionLiteral(parameters, body):

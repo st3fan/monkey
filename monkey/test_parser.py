@@ -190,3 +190,13 @@ def test_if_statements():
 
 def test_block_statements():
     pass # TODO
+
+
+def test_string_literals():
+    expressions = [
+        '""',
+        '"a"',
+        '"aa"'
+    ]
+    for expression in expressions:
+        assert str(parse_program(expression)) == expression

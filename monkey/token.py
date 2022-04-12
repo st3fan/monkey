@@ -14,6 +14,7 @@ class TokenType(Enum):
 
     IDENT = "IDENT"
     INT = "INT"
+    STRING = "STRING"
     
     COMMA = ","
     SEMICOLON = ";"

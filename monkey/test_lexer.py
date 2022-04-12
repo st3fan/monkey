@@ -3,8 +3,16 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
+from token import PLUS
 from monkey.lexer import Lexer
 from monkey.token import Token, TokenType
+
+
+def _test_tokenization(input, expected_tokens):
+    lexer = Lexer(input)
+    for expected_token in expected_tokens:
+        token = lexer.next_token()
+        assert token == expected_token
 
 
 def test_read_identifier():
@@ -143,3 +151,21 @@ def test_next_token_complex():
     for expected_token in expected_tokens:
         token = lexer.next_token()
         assert token == expected_token
+
+
+def test_strings():
+    _test_tokenization('"something"', [
+        Token(TokenType.STRING, "something")
+    ])
+    _test_tokenization('"foo" + "bar"', [
+        Token(TokenType.STRING, "foo"),
+        Token(TokenType.PLUS, "+"),
+        Token(TokenType.STRING, "bar")
+    ])
+    _test_tokenization('let s = "hello";', [
+        Token(TokenType.LET, "let"),
+        Token(TokenType.IDENT, "s"),
+        Token(TokenType.ASSIGN, "="),
+        Token(TokenType.STRING, "hello"),
+        Token(TokenType.SEMICOLON, ";")
+    ])

@@ -18,6 +18,7 @@ class ObjectType(Enum):
     RETURN_VALUE = 3
     EVALUATION_ERROR = 4
     FUNCTION = 5
+    STRING = 6
 
 
 @dataclass
@@ -81,3 +82,12 @@ class Function(Object):
         return ObjectType.FUNCTION.name
     def __str__(self) -> str:
         return str(self) # TODO?
+
+
+@dataclass
+class String(Object):
+    value: str
+    def type(self) -> str:
+        return ObjectType.STRING.name
+    def __str__(self) -> str:
+        return str(self.value)
