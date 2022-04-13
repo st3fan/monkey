@@ -20,6 +20,7 @@ class OperatorPrecedence(IntEnum):
     PRODUCT = 4         # *
     PREFIX = 5          # -X or !X
     CALL = 6            # myFunction(X)
+    INDEX = 7           # [
 
 
 TOKEN_PRECEDENCES = {
@@ -32,6 +33,7 @@ TOKEN_PRECEDENCES = {
     TokenType.SLASH:    OperatorPrecedence.PRODUCT,
     TokenType.ASTERISK: OperatorPrecedence.PRODUCT,
     TokenType.LPAREN:   OperatorPrecedence.CALL,
+    TokenType.LBRACKET: OperatorPrecedence.INDEX,
 }
 
 
@@ -67,6 +69,7 @@ class Parser:
             TokenType.LPAREN: self.parse_grouped_expression,
             TokenType.IF: self.parse_if_expression,
             TokenType.FUNCTION: self.parse_function_literal,
+            TokenType.LBRACKET: self.parse_array_literal,
         }
 
         self.infix_parse_fns = {
@@ -79,6 +82,7 @@ class Parser:
             TokenType.LT: self.parse_infix_expression,
             TokenType.GT: self.parse_infix_expression,
             TokenType.LPAREN: self.parse_call_expression,
+            TokenType.LBRACKET: self.parse_index_expression,
         }
 
         self.next_token()
@@ -174,6 +178,22 @@ class Parser:
         if self.expect_peek(TokenType.RPAREN):
             return parameters
 
+    def parse_expression_list(self, end_token: TokenType) -> List[Expression]:
+        expressions: List[Expression] = []
+        if self.peek_token.type == end_token:
+            self.next_token()
+            return expressions
+        
+        self.next_token()
+        expressions.append(self.parse_expression(OperatorPrecedence.LOWEST))
+
+        while self.peek_token.type == TokenType.COMMA:
+            self.next_token()
+            self.next_token()
+            expressions.append(self.parse_expression(OperatorPrecedence.LOWEST))
+
+        if self.expect_peek(end_token):
+            return expressions
 
     def parse_function_literal(self) -> FunctionLiteral:
         if self.expect_peek(TokenType.LPAREN):
@@ -181,6 +201,9 @@ class Parser:
             if self.expect_peek(TokenType.LBRACE):
                 body = self.parse_block_statement()
                 return FunctionLiteral(parameters, body)
+
+    def parse_array_literal(self) -> ArrayLiteral:
+        return ArrayLiteral(self.parse_expression_list(TokenType.RBRACKET))
 
     def parse_identifier(self) -> Expression:
         return Identifier(self.current_token.literal)
@@ -215,26 +238,15 @@ class Parser:
         right = self.parse_expression(precedence)
         return InfixExpression(left, operator, right)
 
-    def parse_call_arguments(self) -> Optional[List[Expression]]:
-        arguments: List[Expression] = []
-        if self.peek_token.type == TokenType.RPAREN:
-            self.next_token()
-            return arguments
-
-        self.next_token()
-        arguments.append(self.parse_expression(OperatorPrecedence.LOWEST))
-
-        while self.peek_token.type == TokenType.COMMA:
-            self.next_token()
-            self.next_token()
-            arguments.append(self.parse_expression(OperatorPrecedence.LOWEST))
-
-        if self.expect_peek(TokenType.RPAREN):
-            return arguments
-
-
     def parse_call_expression(self, left: Union[Identifier, FunctionLiteral]) -> CallExpression:
-        return CallExpression(left, self.parse_call_arguments())
+        return CallExpression(left, self.parse_expression_list(TokenType.RPAREN))
+
+    def parse_index_expression(self, left: Expression) -> Optional[IndexExpression]:
+        self.next_token()
+        index = self.parse_expression(OperatorPrecedence.LOWEST)
+        if not self.expect_peek(TokenType.RBRACKET):
+            return None
+        return IndexExpression(left, index)
 
     def parse_expression(self, precedence: OperatorPrecedence):
         if (prefix_fn := self.prefix_parse_fns.get(self.current_token.type)) is None:

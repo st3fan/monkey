@@ -169,3 +169,52 @@ def test_strings():
         Token(TokenType.STRING, "hello"),
         Token(TokenType.SEMICOLON, ";")
     ])
+
+
+def test_arrays():
+    _test_tokenization('[]', [
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.RBRACKET, "]")
+    ])
+    _test_tokenization('[1]', [
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.INT, "1"),
+        Token(TokenType.RBRACKET, "]")
+    ])
+    _test_tokenization('[42]', [
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.INT, "42"),
+        Token(TokenType.RBRACKET, "]")
+    ])
+    _test_tokenization('[1, 2, 3]', [
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.INT, "1"),
+        Token(TokenType.COMMA, ","),
+        Token(TokenType.INT, "2"),
+        Token(TokenType.COMMA, ","),
+        Token(TokenType.INT, "3"),
+        Token(TokenType.RBRACKET, "]")
+    ])
+    _test_tokenization('[1,2,3]', [
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.INT, "1"),
+        Token(TokenType.COMMA, ","),
+        Token(TokenType.INT, "2"),
+        Token(TokenType.COMMA, ","),
+        Token(TokenType.INT, "3"),
+        Token(TokenType.RBRACKET, "]")
+    ])
+    _test_tokenization('[11, "foo", [], [42]]', [
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.INT, "11"),
+        Token(TokenType.COMMA, ","),
+        Token(TokenType.STRING, "foo"),
+        Token(TokenType.COMMA, ","),
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.RBRACKET, "]"),
+        Token(TokenType.COMMA, ","),
+        Token(TokenType.LBRACKET, "["),
+        Token(TokenType.INT, "42"),
+        Token(TokenType.RBRACKET, "]"),
+        Token(TokenType.RBRACKET, "]")
+    ])

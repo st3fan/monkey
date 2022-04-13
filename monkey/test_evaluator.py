@@ -160,3 +160,8 @@ def test_eval_string_expressions():
     assert eval('"b" < "a"') == FALSE
     assert eval('"a" > "b"') == FALSE
     assert eval('"b" > "a"') == TRUE
+
+def test_eval_array_index_expressions():
+    assert eval("[3,5,7][0]") == Integer(3)
+    assert eval("[3,5,7][1]") == Integer(5)
+    assert eval("[3,5,7][2]") == Integer(7)

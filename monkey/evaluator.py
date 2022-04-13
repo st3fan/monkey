@@ -5,10 +5,10 @@
 
 from typing import List, Optional, Union
 
-from monkey.ast import BooleanLiteral, CallExpression, Expression, FunctionLiteral, IfExpression, InfixExpression, LetStatement, Node, IntegerLiteral, PrefixExpression, Program, ReturnStatement, Statement, ExpressionStatement, BlockStatement, Identifier, StringLiteral
+from monkey.ast import *
 from monkey.builtins import BUILTINS
 from monkey.environment import Environment
-from monkey.object import Builtin, EvaluationError, Function, Object, Integer, Boolean, Null, ReturnValue, String, NULL, TRUE, FALSE
+from monkey.object import *
 
 
 def make_boolean(value: bool) -> Boolean:
@@ -129,6 +129,16 @@ class Evaluator:
             return unwrap_return_value(evaluated)
         return EvaluationError(f"not a function: {function}") # TODO Fix
 
+    def eval_array_index_expression(self, array: Array, index: Integer) -> Object:
+        if index.value < 0 or index.value > len(array.elements) - 1:
+            return NULL
+        return array.elements[index.value]
+
+    def eval_index_expression(self, left: Object, index: Object) -> Object:
+        if isinstance(left, Array) and isinstance(index, Integer):
+            return self.eval_array_index_expression(left, index)
+        return EvaluationError(f"index operator not supported: {left.type()}")
+
     # TODO This is now a mix of code and eval_* methods. Straighten that out.
     def eval(self, node: Node, environment: Environment) -> Object:
         match node:
@@ -157,6 +167,16 @@ class Evaluator:
                 return make_boolean(value)
             case FunctionLiteral(parameters, body):
                 return Function(parameters, body, environment)
+            case ArrayLiteral(expressions):
+                elements = self.eval_expressions(expressions, environment)
+                if len(elements) == 1 and isinstance(elements[0], EvaluationError):
+                    return elements[0]
+                return Array(elements)
+            
+            case IndexExpression(left_expression, index_expression):
+                left = self.eval(left_expression, environment)
+                index = self.eval(index_expression, environment)
+                return self.eval_index_expression(left, index)
             
             case CallExpression(function, arguments):
                 fn = self.eval(function, environment)

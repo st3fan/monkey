@@ -21,6 +21,7 @@ class ObjectType(Enum):
     FUNCTION = 5
     STRING = 6
     BUILTIN = 7
+    ARRAY = 8
 
 
 @dataclass
@@ -102,6 +103,15 @@ class Builtin(Object):
         return ObjectType.BUILTIN.name
     def __str__(self) -> str:
         return "builtin function" # TODO Can we do something nicer here?
+
+
+@dataclass
+class Array(Object):
+    elements: List[Object]
+    def type(self) -> str:
+        return ObjectType.ARRAY.name
+    def __str__(self) -> str:
+        return "TODO"
 
 
 NULL = Null()

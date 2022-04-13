@@ -200,3 +200,32 @@ def test_string_literals():
     ]
     for expression in expressions:
         assert str(parse_program(expression)) == expression
+
+
+def test_array_literals():
+    expressions = [
+        "[]",
+        "[1]",
+        "[1, 2, 3]",
+        #"[1, [10], [[100], [200]]]"
+    ]
+    for expression in expressions:
+        assert str(parse_program(expression)) == expression
+
+
+def test_index_expression():
+    expressions = [
+        ("array[1]", "(array[1])"),
+        ("array[a + b]", "(array[(a + b)])"),
+        ("array[array[0]]", "(array[(array[0])])"),
+    ]
+    for expression in expressions:
+        assert str(parse_program(expression[0])) == expression[1]
+
+def test_index_expression_operator_precedence():
+    expressions = [
+        ("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"),
+        ("add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))")
+    ]
+    for expression in expressions:
+        assert str(parse_program(expression[0])) == expression[1]

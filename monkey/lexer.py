@@ -79,6 +79,10 @@ class Lexer:
                 tok = Token(TokenType.LBRACE, self.ch)
             case TokenType.RBRACE.value:
                 tok = Token(TokenType.RBRACE, self.ch)
+            case TokenType.LBRACKET.value:
+                tok = Token(TokenType.LBRACKET, self.ch)
+            case TokenType.RBRACKET.value:
+                tok = Token(TokenType.RBRACKET, self.ch)
             case TokenType.COMMA.value:
                 tok = Token(TokenType.COMMA, self.ch)
             case TokenType.PLUS.value:

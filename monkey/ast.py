@@ -78,6 +78,23 @@ class FunctionLiteral(Expression):
 
 
 @dataclass
+class ArrayLiteral(Expression):
+    elements: List[Expression]
+
+    def __str__(self):
+        return f"[{', '.join(str(e) for e in self.elements)}]"
+
+
+@dataclass
+class IndexExpression(Expression):
+    left: Expression
+    index: Expression
+
+    def __str__(self):
+        return f"({str(self.left)}[{str(self.index)}])"
+
+
+@dataclass
 class CallExpression(Expression):
     function: Union[Identifier, FunctionLiteral] # TODO NamedCallExpression vs FunctionLiteralCallExpression?
     arguments: List[Expression]
