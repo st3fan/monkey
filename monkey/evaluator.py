@@ -152,9 +152,16 @@ class Evaluator:
             evaluated_pairs[key] = value
         return Hash(evaluated_pairs)
 
+    def eval_hash_index_expression(self, hash: Hash, index: Object) -> Object:
+        if isinstance(index, (String, Integer, Boolean)):
+            return hash.pairs.get(index, NULL)
+        return EvaluationError(f"unusable as hash key: {index.type()}")
+
     def eval_index_expression(self, left: Object, index: Object) -> Object:
         if isinstance(left, Array) and isinstance(index, Integer):
             return self.eval_array_index_expression(left, index)
+        if isinstance(left, Hash):
+            return self.eval_hash_index_expression(left, index)
         return EvaluationError(f"index operator not supported: {left.type()}")
 
     # TODO This is now a mix of code and eval_* methods. Straighten that out.
@@ -193,7 +200,6 @@ class Evaluator:
                 left = self.eval(left_expression, environment)
                 index = self.eval(index_expression, environment)
                 return self.eval_index_expression(left, index)
-            
             case CallExpression(function, arguments):
                 fn = self.eval(function, environment)
                 if isinstance(fn, EvaluationError):
@@ -202,7 +208,6 @@ class Evaluator:
                 if len(args) == 1 and isinstance(args[0], EvaluationError):
                     return args[0]
                 return self.apply_function(fn, args)
-
             case Identifier(name):
                 if val := environment.get(name):
                     return val

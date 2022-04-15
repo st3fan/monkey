@@ -187,3 +187,17 @@ def _build_hash(d) -> Hash:
 
 def test_eval_hash_expressions():
     assert _eval('{"foo": 1, "bar": 2, "baz": 3}') == _build_hash({"foo": 1, "bar": 2, "baz": 3})
+
+
+def test_eval_hash_index_expressions():
+    assert _eval('{"foo": 5}["foo"]') == Integer(5)
+    assert _eval('{"foo": 5}["bar"]') == NULL
+    assert _eval('let key = "foo"; {"foo": 5}[key]') == Integer(5)
+    assert _eval('{}["foo"]') == NULL
+    assert _eval('{5: 5}[5]') == Integer(5)
+    assert _eval('{true: 5}[true]') == Integer(5)
+    assert _eval('{false: 5}[false]') == Integer(5)
+
+
+def test_hash_index_error_handling():
+    assert _eval('{"name": "Monkey"}[fn(x) { x }];') == EvaluationError("unusable as hash key: FUNCTION")
