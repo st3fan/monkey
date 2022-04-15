@@ -21,4 +21,4 @@ def test_outer_environment():
     inner = Environment(outer=outer)
     assert outer.get("outer") == Integer(42)
     assert inner.get("outer") == Integer(42)
-    assert inner.get("nope") == None
+    assert inner.get("nope") is None

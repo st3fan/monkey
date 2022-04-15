@@ -8,7 +8,7 @@ from typing import List
 from monkey.object import Array, Builtin, EvaluationError, Object, Null, Integer, String, NULL
 
 
-def Len(args: List[Object]) -> Object:
+def builtin_len(args: List[Object]) -> Object:
     if len(args) != 1:
         return EvaluationError(f"wrong number of arguments. got={len(args)}, want=1")
     if isinstance(args[0], String):
@@ -18,7 +18,7 @@ def Len(args: List[Object]) -> Object:
     return EvaluationError(f"argument to `len` not supported, got {args[0].type()}")
 
 
-def Puts(args: List[Object]) -> Object:
+def builtin_puts(args: List[Object]) -> Object:
     if len(args) != 1:
         return EvaluationError(f"wrong number of arguments. got={len(args)}, want=1")
     if isinstance(args[0], String):
@@ -27,7 +27,7 @@ def Puts(args: List[Object]) -> Object:
     return EvaluationError(f"argument to `len` not supported, got {args[0].type()}")
 
 
-def First(args: List[Object]) -> Object:
+def builtin_first(args: List[Object]) -> Object:
     if len(args) != 1:
         return EvaluationError(f"wrong number of arguments. got={len(args)}, want=1")
     if isinstance(args[0], Array):
@@ -36,8 +36,7 @@ def First(args: List[Object]) -> Object:
     return EvaluationError(f"argument to `len` not supported, got {args[0].type()}")
     
 
-
-def Last(args: List[Object]) -> Object:
+def builtin_last(args: List[Object]) -> Object:
     if len(args) != 1:
         return EvaluationError(f"wrong number of arguments. got={len(args)}, want=1")
     if isinstance(args[0], Array):
@@ -46,7 +45,7 @@ def Last(args: List[Object]) -> Object:
     return EvaluationError(f"argument to `len` not supported, got {args[0].type()}")
 
 
-def Rest(args: List[Object]) -> Object:
+def builtin_rest(args: List[Object]) -> Object:
     if len(args) != 1:
         return EvaluationError(f"wrong number of arguments. got={len(args)}, want=1")
     if isinstance(args[0], Array):
@@ -56,9 +55,9 @@ def Rest(args: List[Object]) -> Object:
 
 
 BUILTINS: dict[str, Builtin] = {
-    "len": Builtin(Len),
-    "puts": Builtin(Puts),
-    "first": Builtin(First),
-    "last": Builtin(Last),
-    "rest": Builtin(Rest),
+    "len": Builtin(builtin_len),
+    "puts": Builtin(builtin_puts),
+    "first": Builtin(builtin_first),
+    "last": Builtin(builtin_last),
+    "rest": Builtin(builtin_rest),
 }

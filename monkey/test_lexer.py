@@ -218,3 +218,13 @@ def test_arrays():
         Token(TokenType.RBRACKET, "]"),
         Token(TokenType.RBRACKET, "]")
     ])
+
+
+def text_hashes():
+    _test_tokenization('{"foo": "bar"}', [
+        Token(TokenType.LBRACE, "{"),
+        Token(TokenType.STRING, "foo"),
+        Token(TokenType.COLON, ":"),
+        Token(TokenType.STRING, "bar"),
+        Token(TokenType.RBRACE, "}"),
+    ])

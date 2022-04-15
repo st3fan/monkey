@@ -4,22 +4,22 @@
 
 
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional, TypeAlias, Union
+from typing import Callable, Dict, List, Optional, TypeAlias, Union
 
 from monkey.token import Token, TokenType
 
 
-@dataclass
+@dataclass(frozen = True)
 class Node:
     pass
 
 
-@dataclass
+@dataclass(frozen = True)
 class Statement(Node):
     pass
 
 
-@dataclass
+@dataclass(frozen = True)
 class BlockStatement(Statement):
     statements: List[Statement]
 
@@ -31,12 +31,12 @@ class BlockStatement(Statement):
         return s
 
 
-@dataclass
+@dataclass(frozen = True)
 class Expression(Node): # TODO Is an expression a Node or a Statement?
     pass
 
 
-@dataclass
+@dataclass(frozen = True)
 class Identifier(Expression):
     value: str
 
@@ -44,7 +44,7 @@ class Identifier(Expression):
         return self.value
 
 
-@dataclass
+@dataclass(frozen = True)
 class IntegerLiteral(Expression):
     value: int
 
@@ -52,7 +52,7 @@ class IntegerLiteral(Expression):
         return str(self.value)
 
 
-@dataclass
+@dataclass(frozen = True)
 class BooleanLiteral(Expression):
     value: bool
 
@@ -60,7 +60,7 @@ class BooleanLiteral(Expression):
         return str(self.value).lower()
 
 
-@dataclass
+@dataclass(frozen = True)
 class StringLiteral(Expression):
     value: str
 
@@ -68,7 +68,7 @@ class StringLiteral(Expression):
         return '"' + self.value + '"'
 
 
-@dataclass
+@dataclass(frozen = True)
 class FunctionLiteral(Expression):
     parameters: List[Identifier]
     body: BlockStatement
@@ -77,7 +77,7 @@ class FunctionLiteral(Expression):
         return f"fn ({', '.join(str(p) for p in self.parameters)}) {str(self.body)}"
 
 
-@dataclass
+@dataclass(frozen = True)
 class ArrayLiteral(Expression):
     elements: List[Expression]
 
@@ -85,7 +85,20 @@ class ArrayLiteral(Expression):
         return f"[{', '.join(str(e) for e in self.elements)}]"
 
 
-@dataclass
+@dataclass(frozen = True)
+class HashLiteral(Expression):
+    pairs: Dict[Expression, Expression]
+
+    def __str__(self):
+        contents = ""
+        for k, v in self.pairs.items():
+            if len(contents):
+                contents += ", "
+            contents += str(k) + ":" + str(v)
+        return '{' + contents + '}'
+
+
+@dataclass(frozen = True)
 class IndexExpression(Expression):
     left: Expression
     index: Expression
@@ -94,7 +107,7 @@ class IndexExpression(Expression):
         return f"({str(self.left)}[{str(self.index)}])"
 
 
-@dataclass
+@dataclass(frozen = True)
 class CallExpression(Expression):
     function: Union[Identifier, FunctionLiteral] # TODO NamedCallExpression vs FunctionLiteralCallExpression?
     arguments: List[Expression]
@@ -103,7 +116,7 @@ class CallExpression(Expression):
         return f"{str(self.function)}({', '.join(str(p) for p in self.arguments)})"
 
 
-@dataclass
+@dataclass(frozen = True)
 class PrefixExpression(Expression):
     operator: str # TODO Candidate for an Enum?
     right: Expression
@@ -112,7 +125,7 @@ class PrefixExpression(Expression):
         return f"({self.operator}{str(self.right)})"
 
 
-@dataclass
+@dataclass(frozen = True)
 class InfixExpression(Expression):
     left: Expression
     operator: str
@@ -122,7 +135,7 @@ class InfixExpression(Expression):
         return f"({str(self.left)} {self.operator} {str(self.right)})"
 
 
-@dataclass
+@dataclass(frozen = True)
 class IfExpression(Expression):
     condition: Expression
     consequence: BlockStatement
@@ -135,7 +148,7 @@ class IfExpression(Expression):
         return s
 
 
-@dataclass
+@dataclass(frozen = True)
 class ExpressionStatement(Statement):
     expression: Expression
 
@@ -143,7 +156,7 @@ class ExpressionStatement(Statement):
         return str(self.expression)
 
 
-@dataclass
+@dataclass(frozen = True)
 class Program(Node):
     statements: List[Statement] = field(default_factory=list)
 
@@ -155,7 +168,7 @@ class Program(Node):
         return s
 
 
-@dataclass
+@dataclass(frozen = True)
 class LetStatement(Statement):
     name: Identifier
     value: ExpressionStatement
@@ -164,7 +177,7 @@ class LetStatement(Statement):
         return f"let {self.name} = {str(self.value)};"
 
 
-@dataclass
+@dataclass(frozen = True)
 class ReturnStatement(Statement):
     value: ExpressionStatement
 

@@ -4,9 +4,9 @@
 
 
 from monkey.environment import Environment
-from monkey.evaluator import Evaluator, TRUE, FALSE, NULL
+from monkey.evaluator import Evaluator, NULL
 from monkey.lexer import Lexer
-from monkey.object import Object, Integer, Null, EvaluationError, Function, String, Array
+from monkey.object import Object, Integer, EvaluationError, Array
 from monkey.parser import Parser
 
 

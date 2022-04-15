@@ -6,7 +6,7 @@
 from monkey.environment import Environment
 from monkey.evaluator import Evaluator, TRUE, FALSE, NULL
 from monkey.lexer import Lexer
-from monkey.object import Object, Integer, Null, EvaluationError, Function, String
+from monkey.object import Object, Integer, Null, EvaluationError, Function, String, Hash
 from monkey.parser import Parser
 
 
@@ -172,3 +172,18 @@ def test_eval_array_index_expressions():
     assert _eval("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]") == Integer(2)
     assert _eval("[1, 2, 3][3]") == NULL
     assert _eval("[1, 2, 3][-1]") == NULL
+
+
+def _build_hash(d) -> Hash:
+    hash = Hash({})
+    for k, v in d.items():
+        match (k, v):
+            case str(s), int(i):
+                hash.pairs[String(s)] = Integer(i)
+            case _:
+                raise Exception(f"Cannot handle {type(k).__name__}/{type(v).__name__} pair")
+    return hash
+
+
+def test_eval_hash_expressions():
+    assert _eval('{"foo": 1, "bar": 2, "baz": 3}') == _build_hash({"foo": 1, "bar": 2, "baz": 3})

@@ -70,6 +70,7 @@ class Parser:
             TokenType.IF: self.parse_if_expression,
             TokenType.FUNCTION: self.parse_function_literal,
             TokenType.LBRACKET: self.parse_array_literal,
+            TokenType.LBRACE: self.parse_hash_literal,
         }
 
         self.infix_parse_fns = {
@@ -153,13 +154,13 @@ class Parser:
             if self.expect_peek(TokenType.RPAREN):
                 if self.expect_peek(TokenType.LBRACE):
                     consequence = self.parse_block_statement()
-                    if_expression = IfExpression(condition, consequence, None)
                     if self.peek_token.type == TokenType.ELSE:
                         self.next_token()
                         if not self.expect_peek(TokenType.LBRACE):
                             return None
-                        if_expression.alternative = self.parse_block_statement()
-                    return if_expression
+                        alternative = self.parse_block_statement()
+                        return IfExpression(condition, consequence, alternative)
+                    return IfExpression(condition, consequence, None)
 
     def parse_function_parameters(self) -> List[Identifier]:
         parameters: List[Identifier] = []
@@ -204,6 +205,28 @@ class Parser:
 
     def parse_array_literal(self) -> ArrayLiteral:
         return ArrayLiteral(self.parse_expression_list(TokenType.RBRACKET))
+
+    def parse_hash_literal(self) -> Optional[HashLiteral]:
+        pairs: Dict[Expression, Expression] = {}
+        while self.peek_token.type != TokenType.RBRACE:
+            self.next_token()
+            key = self.parse_expression(OperatorPrecedence.LOWEST)
+
+            if not self.expect_peek(TokenType.COLON):
+                return None
+            
+            self.next_token()
+            value = self.parse_expression(OperatorPrecedence.LOWEST)
+
+            pairs[key] = value
+
+            if self.peek_token.type != TokenType.RBRACE and not self.expect_peek(TokenType.COMMA):
+                return None
+
+        if not self.expect_peek(TokenType.RBRACE):
+            return None
+        
+        return HashLiteral(pairs)
 
     def parse_identifier(self) -> Expression:
         return Identifier(self.current_token.literal)

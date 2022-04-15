@@ -3,10 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from types import BuiltinFunctionType
-from typing import Callable, List
+from typing import Callable, Dict, List
 
 from monkey.ast import Identifier, BlockStatement
 from monkey.environment import Environment
@@ -22,94 +21,124 @@ class ObjectType(Enum):
     STRING = 6
     BUILTIN = 7
     ARRAY = 8
+    HASH = 9
 
 
-@dataclass
+@dataclass(frozen=True)
 class Object:
     def type(self) -> str:
         raise NotImplementedError()
+
     def __str__(self) -> str:
         raise NotImplementedError()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Integer(Object):
     value: int
+
     def type(self) -> str:
         return ObjectType.INTEGER.name
+
     def __str__(self) -> str:
         return str(self.value)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Boolean(Object):
     value: bool
+
     def type(self) -> str:
         return ObjectType.BOOLEAN.name
+
     def __str__(self) -> str:
         return str(self.value)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Null(Object):
     def type(self) -> str:
         return ObjectType.NULL.name
+
     def __str__(self) -> str:
         return "null"
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReturnValue(Object):
     value: Object
+
     def type(self) -> str:
         return ObjectType.RETURN_VALUE.name
+
     def __str__(self) -> str:
         return str(self.value)
 
 
-@dataclass
+@dataclass(frozen=True)
 class EvaluationError(Object):
     message: str
+
     def type(self) -> str:
         return ObjectType.EVALUATION_ERROR.name
+
     def __str__(self) -> str:
         return self.message
 
 
-@dataclass
+@dataclass(frozen=True)
 class Function(Object):
     parameters: List[Identifier]
     body: BlockStatement
     environment: Environment
+
     def type(self) -> str:
         return ObjectType.FUNCTION.name
+
     def __str__(self) -> str:
-        return str(self) # TODO?
+        return str(self)  # TODO?
 
 
-@dataclass
+@dataclass(frozen=True)
 class String(Object):
     value: str
+
     def type(self) -> str:
         return ObjectType.STRING.name
+
     def __str__(self) -> str:
         return str(self.value)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Builtin(Object):
     value: Callable
+
     def type(self) -> str:
         return ObjectType.BUILTIN.name
+
     def __str__(self) -> str:
-        return "builtin function" # TODO Can we do something nicer here?
+        return "builtin function"  # TODO Can we do something nicer here?
 
 
-@dataclass
+@dataclass(frozen=True)
 class Array(Object):
     elements: List[Object]
+
     def type(self) -> str:
         return ObjectType.ARRAY.name
+
+    def __str__(self) -> str:
+        return "TODO"
+
+
+@dataclass(frozen=True)
+class Hash(Object):
+    pairs: Dict[Object, Object] = field(default_factory=dict)
+
+    def type(self) -> str:
+        return ObjectType.HASH.name
+
     def __str__(self) -> str:
         return "TODO"
 

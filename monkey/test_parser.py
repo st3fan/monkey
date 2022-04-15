@@ -222,10 +222,24 @@ def test_index_expression():
     for expression in expressions:
         assert str(parse_program(expression[0])) == expression[1]
 
+
 def test_index_expression_operator_precedence():
     expressions = [
         ("a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"),
         ("add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))")
+    ]
+    for expression in expressions:
+        assert str(parse_program(expression[0])) == expression[1]
+
+
+def test_hash_literals():
+    expressions = [
+        ('{}', '{}'),
+        ('{"foo": "bar"}', '{"foo":"bar"}'),
+        ('{42: "bar"}', '{42:"bar"}'),
+        ('{"foo": 42}', '{"foo":42}'),
+        ('{key: value}', '{key:value}'),
+        ('{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}', '{"one":(0 + 1), "two":(10 - 8), "three":(15 / 5)}')
     ]
     for expression in expressions:
         assert str(parse_program(expression[0])) == expression[1]

@@ -129,10 +129,28 @@ class Evaluator:
             return unwrap_return_value(evaluated)
         return EvaluationError(f"not a function: {function}") # TODO Fix
 
+    def eval_array_literal(self, expressions: List[Expression], environment: Environment) -> Object:
+        elements = self.eval_expressions(expressions, environment)
+        if len(elements) == 1 and isinstance(elements[0], EvaluationError):
+            return elements[0]
+        return Array(elements)
+
     def eval_array_index_expression(self, array: Array, index: Integer) -> Object:
         if index.value < 0 or index.value > len(array.elements) - 1:
             return NULL
         return array.elements[index.value]
+
+    def eval_hash_literal(self, pairs: Dict[Expression, Expression], environment: Environment) -> Union[EvaluationError, Hash]:
+        evaluated_pairs: Dict[Object, Object] = {}
+        for key_expression, value_expression in pairs.items():
+            key = self.eval(key_expression,environment)
+            if isinstance(key, EvaluationError):
+                return key
+            value = self.eval(value_expression,environment)
+            if isinstance(value, EvaluationError):
+                return value
+            evaluated_pairs[key] = value
+        return Hash(evaluated_pairs)
 
     def eval_index_expression(self, left: Object, index: Object) -> Object:
         if isinstance(left, Array) and isinstance(index, Integer):
@@ -168,11 +186,9 @@ class Evaluator:
             case FunctionLiteral(parameters, body):
                 return Function(parameters, body, environment)
             case ArrayLiteral(expressions):
-                elements = self.eval_expressions(expressions, environment)
-                if len(elements) == 1 and isinstance(elements[0], EvaluationError):
-                    return elements[0]
-                return Array(elements)
-            
+                return self.eval_array_literal(expressions, environment)
+            case HashLiteral(pairs):
+                return self.eval_hash_literal(pairs, environment)
             case IndexExpression(left_expression, index_expression):
                 left = self.eval(left_expression, environment)
                 index = self.eval(index_expression, environment)

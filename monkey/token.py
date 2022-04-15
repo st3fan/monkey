@@ -17,6 +17,7 @@ class TokenType(Enum):
     STRING = "STRING"
     
     COMMA = ","
+    COLON = ":"
     SEMICOLON = ";"
     LPAREN = "("
     RPAREN = ")"

@@ -71,6 +71,8 @@ class Lexer:
                     tok = Token(TokenType.ASSIGN, self.ch)
             case TokenType.SEMICOLON.value:
                 tok = Token(TokenType.SEMICOLON, self.ch)
+            case TokenType.COLON.value:
+                tok = Token(TokenType.COLON, self.ch)
             case TokenType.LPAREN.value:
                 tok = Token(TokenType.LPAREN, self.ch)
             case TokenType.RPAREN.value:
