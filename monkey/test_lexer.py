@@ -3,9 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from token import PLUS
-from monkey.lexer import Lexer
-from monkey.token import Token, TokenType
+from .lexer import Lexer
+from .token import Token, TokenType
 
 
 def _test_tokenization(input, expected_tokens):

@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from monkey.environment import Environment
-from monkey.object import Integer
+from .environment import Environment
+from .object import Integer
 
 
 def test_environment():

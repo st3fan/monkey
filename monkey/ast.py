@@ -4,9 +4,7 @@
 
 
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, TypeAlias, Union
-
-from monkey.token import Token, TokenType
+from typing import Dict, List, Optional, Union
 
 
 @dataclass(frozen = True)

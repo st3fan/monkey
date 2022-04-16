@@ -3,10 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from monkey.ast import BooleanLiteral, ExpressionStatement, Identifier, InfixExpression, LetStatement, IntegerLiteral, PrefixExpression
-from monkey.lexer import Lexer
-from monkey.token import Token, TokenType
-from monkey.parser import Parser
+from .ast import BooleanLiteral, ExpressionStatement, Identifier, InfixExpression, LetStatement, IntegerLiteral, PrefixExpression
+from .lexer import Lexer
+from .token import Token, TokenType
+from .parser import Parser
 
 
 def parse_program(s):

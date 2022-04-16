@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from monkey.lexer import Lexer
-from monkey.parser import Parser
+from .lexer import Lexer
+from .parser import Parser
 
 
 def parse(s):

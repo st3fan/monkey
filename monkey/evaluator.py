@@ -5,10 +5,10 @@
 
 from typing import List, Optional, Union
 
-from monkey.ast import *
-from monkey.builtins import BUILTINS
-from monkey.environment import Environment
-from monkey.object import *
+from .ast import *
+from .builtins import BUILTINS
+from .environment import Environment
+from .object import *
 
 
 def make_boolean(value: bool) -> Boolean:
@@ -204,10 +204,11 @@ class Evaluator:
                 fn = self.eval(function, environment)
                 if isinstance(fn, EvaluationError):
                     return fn
-                args = self.eval_expressions(arguments, environment)
-                if len(args) == 1 and isinstance(args[0], EvaluationError):
-                    return args[0]
-                return self.apply_function(fn, args)
+                if isinstance(fn, (Function, Builtin)):
+                    args = self.eval_expressions(arguments, environment)
+                    if len(args) == 1 and isinstance(args[0], EvaluationError):
+                        return args[0]
+                    return self.apply_function(fn, args)
             case Identifier(name):
                 if val := environment.get(name):
                     return val

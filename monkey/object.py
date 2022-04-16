@@ -7,8 +7,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable, Dict, List
 
-from monkey.ast import Identifier, BlockStatement
-from monkey.environment import Environment
+from .ast import Identifier, BlockStatement
+from .environment import Environment
 
 
 class ObjectType(Enum):

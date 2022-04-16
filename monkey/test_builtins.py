@@ -3,11 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from monkey.environment import Environment
-from monkey.evaluator import Evaluator, NULL
-from monkey.lexer import Lexer
-from monkey.object import Object, Integer, EvaluationError, Array
-from monkey.parser import Parser
+from .environment import Environment
+from .evaluator import Evaluator, NULL
+from .lexer import Lexer
+from .object import Object, Integer, EvaluationError, Array
+from .parser import Parser
 
 
 def _eval(program: str, expected_object: Object):

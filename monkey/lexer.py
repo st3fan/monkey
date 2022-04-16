@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from monkey.token import Token, TokenType, lookup_ident
+from .token import Token, TokenType, lookup_ident
 
 
 class Lexer:

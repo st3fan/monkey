@@ -4,12 +4,11 @@
 
 
 from enum import IntEnum
-from sre_constants import NOT_LITERAL
 from typing import Callable, Dict, List, Optional, TypeAlias
 
-from monkey.ast import *
-from monkey.lexer import Lexer
-from monkey.token import Token, TokenType
+from .ast import *
+from .lexer import Lexer
+from .token import Token, TokenType
 
 
 class OperatorPrecedence(IntEnum):

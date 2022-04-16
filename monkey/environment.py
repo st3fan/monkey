@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 @dataclass
 class Environment:
-    outer: Any = field(default=None)  # TODO How do we do this?
+    outer: Any = field(default=None)  # TODO How do we use Object here instead?
     store: Dict[str, Any] = field(default_factory=dict)  # TODO Should be private/internal
 
     def get(self, name: str) -> Optional[Any]:
