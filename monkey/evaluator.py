@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, get_args, get_origin
 
 from .ast import *
 from .builtins import BUILTINS
@@ -17,6 +17,10 @@ def make_boolean(value: bool) -> Boolean:
 
 def is_truthy(object: Object) -> bool:
     return object not in (NULL, FALSE)
+
+
+def argument_matches_types(arg, typ):
+    return (get_origin(typ) is Union and isinstance(arg, get_args(typ))) or isinstance(arg, typ)
 
 
 def extend_function_env(function: Function, arguments: List[Object]) -> Environment:
@@ -119,15 +123,26 @@ class Evaluator:
                 return EvaluationError(f"unknown operator: {left.type()} {operator} {right.type()}")
         return EvaluationError(f"type mismatch: {left.type()} {operator} {right.type()}")
 
-    def apply_function(self, function: Union[Builtin, Function], arguments: List[Object]) -> Object:
-        # TODO Should be a match
-        if isinstance(function, Builtin):
-            return function.value(arguments)
-        if isinstance(function, Function):
-            extended_env = extend_function_env(function, arguments)
-            evaluated = self.eval(function.body, extended_env)
-            return unwrap_return_value(evaluated)
-        return EvaluationError(f"not a function: {function}") # TODO Fix
+    def apply_builtin(self, builtin: Builtin, arguments: List[Object]) -> Object:
+        if len(arguments) != len(builtin.argument_types):
+            return EvaluationError(f"wrong number of arguments. got={len(arguments)}, want={len(builtin.argument_types)}")
+        for arg, typ in zip(arguments, builtin.argument_types):
+            # Check if the argument matches the expected type, taking Union into account too.
+            if not ((get_origin(typ) is Union and isinstance(arg, get_args(typ))) or isinstance(arg, typ)):
+                return EvaluationError(f"argument to `{builtin.name}` not supported, got {arg.type()}")
+        return builtin.callable(*arguments)
+
+    def apply_function(self, function: Function, arguments: List[Object]) -> Object:
+        extended_env = extend_function_env(function, arguments)
+        evaluated = self.eval(function.body, extended_env)
+        return unwrap_return_value(evaluated)
+
+    def apply_callable(self, function: Union[Builtin, Function], arguments: List[Object]) -> Object:
+        match function:
+            case Builtin():
+                return self.apply_builtin(function, arguments)
+            case Function():
+                return self.apply_function(function, arguments)
 
     def eval_array_literal(self, expressions: List[Expression], environment: Environment) -> Object:
         elements = self.eval_expressions(expressions, environment)
@@ -208,7 +223,7 @@ class Evaluator:
                     args = self.eval_expressions(arguments, environment)
                     if len(args) == 1 and isinstance(args[0], EvaluationError):
                         return args[0]
-                    return self.apply_function(fn, args)
+                    return self.apply_callable(fn, args)
             case Identifier(name):
                 if val := environment.get(name):
                     return val

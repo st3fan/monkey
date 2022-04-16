@@ -5,7 +5,8 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Dict, List
+from inspect import getfullargspec
+from typing import Any, Callable, Dict, List
 
 from .ast import Identifier, BlockStatement
 from .environment import Environment
@@ -112,13 +113,23 @@ class String(Object):
 
 @dataclass(frozen=True)
 class Builtin(Object):
-    value: Callable
+    name: str
+    callable: Callable
+    
+    argument_types: List[Any] = field(init = False, compare=False)
+    return_type: Any = field(init = False, compare=False)
+
+    def __post_init__(self):
+        super().__init__()
+        args_spec = getfullargspec(self.callable)        
+        object.__setattr__(self, "argument_types", [args_spec.annotations[arg] for arg in args_spec.args])
+        object.__setattr__(self, "return_type", args_spec.annotations.get('return', Null))
 
     def type(self) -> str:
         return ObjectType.BUILTIN.name
 
     def __str__(self) -> str:
-        return "builtin function"  # TODO Can we do something nicer here?
+        return f"builtin {self.callable.__name__}({''.join(self.argument_types)}) -> {self.return_type}"
 
 
 @dataclass(frozen=True)
