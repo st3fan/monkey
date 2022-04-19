@@ -234,7 +234,7 @@ class Evaluator:
                 right = self.eval(right_expression, environment)
                 if isinstance(right, EvaluationError):
                     return right
-                return self.eval_prefix_expression(operator, right)            
+                return self.eval_prefix_expression(operator, right)
             case InfixExpression(left_expression, operator, right_expression):
                 left = self.eval(left_expression, environment)
                 if isinstance(left, EvaluationError):
