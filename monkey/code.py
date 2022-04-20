@@ -26,6 +26,12 @@ class Opcode(IntEnum):
     LESS_THAN = 8
     EQUAL = 9
     NOT_EQUAL = 10
+    MINUS = 11
+    BANG = 12
+    JUMP_NOT_TRUTHY = 13
+    JUMP = 14
+    POP = 15
+    NULL = 16
 
 
 @dataclass
@@ -46,6 +52,12 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.LESS_THAN: Definition(Opcode.LESS_THAN),
     Opcode.EQUAL: Definition(Opcode.EQUAL),
     Opcode.NOT_EQUAL: Definition(Opcode.NOT_EQUAL),
+    Opcode.MINUS: Definition(Opcode.MINUS),
+    Opcode.BANG: Definition(Opcode.BANG),
+    Opcode.JUMP_NOT_TRUTHY: Definition(Opcode.JUMP_NOT_TRUTHY, [2]),
+    Opcode.JUMP: Definition(Opcode.JUMP, [2]),
+    Opcode.POP: Definition(Opcode.POP),
+    Opcode.NULL: Definition(Opcode.NULL),
 }
 
 
