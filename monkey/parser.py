@@ -88,7 +88,7 @@ class Parser:
         self.next_token()
         self.next_token()
 
-    def next_token(self): 
+    def next_token(self):
         self.current_token = self.peek_token
         self.peek_token = self.lexer.next_token()
 
@@ -183,7 +183,7 @@ class Parser:
         if self.peek_token.type == end_token:
             self.next_token()
             return expressions
-        
+
         self.next_token()
         expressions.append(self.parse_expression(OperatorPrecedence.LOWEST))
 
@@ -213,7 +213,7 @@ class Parser:
 
             if not self.expect_peek(TokenType.COLON):
                 return None
-            
+
             self.next_token()
             value = self.parse_expression(OperatorPrecedence.LOWEST)
 
@@ -224,7 +224,7 @@ class Parser:
 
         if not self.expect_peek(TokenType.RBRACE):
             return None
-        
+
         return HashLiteral(pairs)
 
     def parse_identifier(self) -> Expression:

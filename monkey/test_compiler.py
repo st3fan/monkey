@@ -73,20 +73,53 @@ def _compile_and_assert(test):
 
 INTEGER_ARITHMETIC_TESTS = [
     { "expression": "7 + 5",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.ADD), make(Opcode.POP)],
-      "constants": [Integer(7), Integer(5)] },
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.ADD),
+          make(Opcode.POP) ],
+      "constants": [
+          Integer(7),
+          Integer(5) ] },
     { "expression": "7 - 5",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.SUBTRACT), make(Opcode.POP)],
-      "constants": [Integer(7), Integer(5)] },
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.SUBTRACT),
+          make(Opcode.POP) ],
+      "constants": [
+          Integer(7),
+          Integer(5) ] },
     { "expression": "7 * 5",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.MULTIPLY), make(Opcode.POP)],
-      "constants": [Integer(7), Integer(5)] },
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.MULTIPLY),
+          make(Opcode.POP)
+      ],
+      "constants": [
+          Integer(7),
+          Integer(5)
+      ] },
     { "expression": "7 * 5",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.MULTIPLY), make(Opcode.POP)],
-      "constants": [Integer(7), Integer(5)] },
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.MULTIPLY),
+          make(Opcode.POP) ],
+      "constants": [
+          Integer(7),
+          Integer(5)
+      ] },
     { "expression": "7; 5",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.POP), make(Opcode.CONSTANT, [1]), make(Opcode.POP)],
-      "constants": [Integer(7), Integer(5)] },
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.POP),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.POP) ],
+      "constants": [
+          Integer(7),
+          Integer(5) ] },
 ]
 
 
@@ -97,10 +130,14 @@ def test_integer_arithmetic(test):
 
 BOOLEAN_TESTS = [
     { "expression": "true",
-      "instructions": [make(Opcode.TRUE), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.TRUE),
+          make(Opcode.POP) ],
       "constants": [] },
     { "expression": "false",
-      "instructions": [make(Opcode.FALSE), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.FALSE),
+          make(Opcode.POP) ],
       "constants": [] },
 ]
 
@@ -112,22 +149,45 @@ def test_booleans_arithmetic(test):
 
 COMPARISON_OPERATORS_TESTS = [
     { "expression": "1 > 2",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.GREATER_THAN), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.GREATER_THAN),
+          make(Opcode.POP) ],
       "constants": [Integer(1), Integer(2)] },
     { "expression": "1 < 2",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.LESS_THAN), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.LESS_THAN),
+          make(Opcode.POP) ],
       "constants": [Integer(1), Integer(2)] },
     { "expression": "1 == 2",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.EQUAL), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.EQUAL), make(Opcode.POP) ],
       "constants": [Integer(1), Integer(2)] },
     { "expression": "1 != 2",
-      "instructions": [make(Opcode.CONSTANT, [0]), make(Opcode.CONSTANT, [1]), make(Opcode.NOT_EQUAL), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.NOT_EQUAL),
+          make(Opcode.POP) ],
       "constants": [Integer(1), Integer(2)] },
     { "expression": "true == false",
-      "instructions": [make(Opcode.TRUE), make(Opcode.FALSE), make(Opcode.EQUAL), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.TRUE),
+          make(Opcode.FALSE),
+          make(Opcode.EQUAL),
+          make(Opcode.POP) ],
       "constants": [] },
     { "expression": "true != false",
-      "instructions": [make(Opcode.TRUE), make(Opcode.FALSE), make(Opcode.NOT_EQUAL), make(Opcode.POP)],
+      "instructions": [
+          make(Opcode.TRUE),
+          make(Opcode.FALSE),
+          make(Opcode.NOT_EQUAL),
+          make(Opcode.POP) ],
       "constants": [] },
 ]
 
@@ -187,6 +247,64 @@ CONDITIONALS_TESTS = [
 def test_conditionals(test):
     _compile_and_assert(test)
 
+
+
+#
+# Actual b'\x00\x00\x00 \x0f \x12\x00\x00' - Has a POP in between CONSTANT and SET_GLOBAL
+# Expected b'\x00\x00\x00\x12\x00\x00'
+#
+# The only place where we insert a POP is in compile_expression_statement()
+#
+
+
+GLOBAL_LET_STATEMENTS_TESTS = [
+    { "expression": "let one = 1;",
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.SET_GLOBAL, [0]),
+      ],
+      "constants": [
+          Integer(1),
+      ] },
+    { "expression": "let one = 1; let two = 2;",
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.SET_GLOBAL, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.SET_GLOBAL, [1]),
+      ],
+      "constants": [
+          Integer(1),
+          Integer(2),
+      ] },
+    { "expression": "let one = 1; one;",
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.SET_GLOBAL, [0]),
+          make(Opcode.GET_GLOBAL, [0]),
+          make(Opcode.POP),
+      ],
+      "constants": [
+          Integer(1),
+      ] },
+    { "expression": "let one = 1; let two = one; two;",
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.SET_GLOBAL, [0]),
+          make(Opcode.GET_GLOBAL, [0]),
+          make(Opcode.SET_GLOBAL, [1]),
+          make(Opcode.GET_GLOBAL, [1]),
+          make(Opcode.POP),
+      ],
+      "constants": [
+          Integer(1),
+      ] },
+]
+
+
+@pytest.mark.parametrize("test", GLOBAL_LET_STATEMENTS_TESTS)
+def test_global_let_statements(test):
+    _compile_and_assert(test)
 
 def test_disassemble():
     pass  # TODO

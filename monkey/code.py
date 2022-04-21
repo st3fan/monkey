@@ -32,6 +32,8 @@ class Opcode(IntEnum):
     JUMP = 14
     POP = 15
     NULL = 16
+    GET_GLOBAL = 17
+    SET_GLOBAL = 18
 
 
 @dataclass
@@ -58,6 +60,8 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.JUMP: Definition(Opcode.JUMP, [2]),
     Opcode.POP: Definition(Opcode.POP),
     Opcode.NULL: Definition(Opcode.NULL),
+    Opcode.GET_GLOBAL: Definition(Opcode.GET_GLOBAL, [2]),
+    Opcode.SET_GLOBAL: Definition(Opcode.SET_GLOBAL, [2]),
 }
 
 
