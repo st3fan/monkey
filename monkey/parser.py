@@ -138,7 +138,7 @@ class Parser:
             identifier = Identifier(self.current_token.literal)
             if self.expect_peek(TokenType.ASSIGN):
                 self.next_token()
-                if expression := self.parse_expression_statement():
+                if expression := self.parse_expression(OperatorPrecedence.LOWEST):
                     return LetStatement(identifier, expression)
 
     def parse_return_statement(self) -> Optional[ReturnStatement]:
@@ -282,8 +282,9 @@ class Parser:
         return left
 
     def parse_expression_statement(self) -> Optional[ExpressionStatement]:
-        statement = ExpressionStatement(self.parse_expression(OperatorPrecedence.LOWEST))
-        # Ending a statement with a semicolon is optional
-        if self.peek_token.type == TokenType.SEMICOLON:
-            self.next_token()
-        return statement
+        if expression := self.parse_expression(OperatorPrecedence.LOWEST):
+            statement = ExpressionStatement(expression)
+            # Ending a statement with a semicolon is optional
+            if self.peek_token.type == TokenType.SEMICOLON:
+                self.next_token()
+            return statement

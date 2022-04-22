@@ -169,7 +169,7 @@ class Program(Node):
 @dataclass(frozen = True)
 class LetStatement(Statement):
     name: Identifier
-    value: ExpressionStatement
+    value: Expression
 
     def __str__(self):
         return f"let {self.name} = {str(self.value)};"

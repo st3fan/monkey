@@ -35,13 +35,13 @@ def test_parse_let_statements():
     assert len(program.statements) == 3
     assert isinstance(program.statements[0], LetStatement)
     assert program.statements[0].name == Identifier("x")
-    assert program.statements[0].value == ExpressionStatement(IntegerLiteral(5))
+    assert program.statements[0].value == IntegerLiteral(5)
     assert isinstance(program.statements[1], LetStatement)
     assert program.statements[1].name == Identifier("y")
-    assert program.statements[1].value == ExpressionStatement(IntegerLiteral(10))
+    assert program.statements[1].value == IntegerLiteral(10)
     assert isinstance(program.statements[2], LetStatement)
     assert program.statements[2].name == Identifier("z")
-    assert program.statements[2].value == ExpressionStatement(IntegerLiteral(838383))
+    assert program.statements[2].value == IntegerLiteral(838383)
 
 
 def test_parse_return_statements():

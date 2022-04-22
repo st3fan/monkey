@@ -133,7 +133,7 @@ class Compiler:
                 for statement in node.statements:
                     self.compile(statement)
             case LetStatement():
-                self.compile(node.value.expression)
+                self.compile(node.value)
                 symbol = self.symbol_table.define(node.name.value)
                 self.emit(Opcode.SET_GLOBAL, [symbol.index])
             case Identifier():
