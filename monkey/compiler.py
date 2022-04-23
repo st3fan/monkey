@@ -5,8 +5,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from re import S
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from .ast import *
 from .code import Opcode, make
@@ -211,6 +210,8 @@ class Compiler:
                 self.compile_if_expression(node)
             case ExpressionStatement():
                 self.compile_expression_statement(node)
+            case _:
+                raise Exception(f"unknown node {node}")
 
     def bytecode(self) -> Bytecode:
         return Bytecode(self.instructions, self.state.constants)
