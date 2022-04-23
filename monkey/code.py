@@ -37,6 +37,9 @@ class Opcode(IntEnum):
     ARRAY = 19
     HASH = 20
     INDEX = 21
+    CALL = 22
+    RETURN_VALUE = 23
+    RETURN = 24
 
 
 @dataclass
@@ -68,14 +71,18 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.ARRAY: Definition(Opcode.ARRAY, [2]),
     Opcode.HASH: Definition(Opcode.HASH, [2]),
     Opcode.INDEX: Definition(Opcode.INDEX),
+    Opcode.CALL: Definition(Opcode.CALL),
+    Opcode.RETURN_VALUE: Definition(Opcode.RETURN_VALUE),
+    Opcode.RETURN: Definition(Opcode.RETURN),
 }
 
 
 def lookup_definition(opcode: Opcode) -> Optional[Definition]:
     return DEFINITIONS.get(opcode) # Should it just raise because it is an internal error?
 
+# TODO Instead of make() can we do Instruction(Opcode.CONSTANT, [0]) - and add an "assemble" step?
 
-def make(opcode: Opcode, operands: List[int] = None) -> bytes:
+def make(opcode: Opcode, operands: Optional[List[int]] = None) -> bytes:
     if (definition := lookup_definition(opcode)) is None:
         raise Exception(f"Cannot find definition for opcode {opcode}")
 
@@ -89,6 +96,8 @@ def make(opcode: Opcode, operands: List[int] = None) -> bytes:
     for i, o in enumerate(operands):
         match definition.operand_widths[i]:
             case 2:
-                instructions += pack(">H", o)
+                instructions += pack(">H", o) # TODO Nicer to have an Enum with SHORT, USHORT? Value could be pack spec.
+            case unexpected:
+                raise Exception(f"unexpected operand width: {unexpected}")
 
     return instructions

@@ -8,8 +8,8 @@ import pytest
 from .lexer import Lexer
 from .parser import Parser
 from .code import Opcode, make
-from .compiler import Compiler, EmittedInstruction
-from .object import Integer, String
+from .compiler import CompilationScope, Compiler, EmittedInstruction
+from .object import CompiledFunction, Integer, String
 
 
 def test_last_instruction_is_pop():
@@ -25,32 +25,55 @@ def test_remove_last_pop():
     compiler.emit(Opcode.CONSTANT, [0])
     compiler.emit(Opcode.POP)
     compiler.remove_last_pop()
-    assert compiler.instructions == make(Opcode.CONSTANT, [0])
+    assert compiler.scopes[compiler.scope_index].instructions == make(Opcode.CONSTANT, [0])
 
 
 def test_last_prev_instruction():
     compiler = Compiler()
-    assert compiler.prev_instruction is None
-    assert compiler.last_instruction is None
+    assert compiler.scopes[compiler.scope_index].prev_instruction is None
+    assert compiler.scopes[compiler.scope_index].last_instruction is None
     compiler.emit(Opcode.CONSTANT, [0])
-    assert compiler.prev_instruction is None
-    assert compiler.last_instruction == EmittedInstruction(Opcode.CONSTANT, 0)
+    assert compiler.scopes[compiler.scope_index].prev_instruction is None
+    assert compiler.scopes[compiler.scope_index].last_instruction == EmittedInstruction(Opcode.CONSTANT, 0)
     compiler.emit(Opcode.JUMP_NOT_TRUTHY, [0])
-    assert compiler.prev_instruction == EmittedInstruction(Opcode.CONSTANT, 0)
-    assert compiler.last_instruction == EmittedInstruction(Opcode.JUMP_NOT_TRUTHY, 3)
+    assert compiler.scopes[compiler.scope_index].prev_instruction == EmittedInstruction(Opcode.CONSTANT, 0)
+    assert compiler.scopes[compiler.scope_index].last_instruction == EmittedInstruction(Opcode.JUMP_NOT_TRUTHY, 3)
     compiler.emit(Opcode.JUMP, [0])
-    assert compiler.prev_instruction == EmittedInstruction(Opcode.JUMP_NOT_TRUTHY, 3)
-    assert compiler.last_instruction == EmittedInstruction(Opcode.JUMP, 6)
+    assert compiler.scopes[compiler.scope_index].prev_instruction == EmittedInstruction(Opcode.JUMP_NOT_TRUTHY, 3)
+    assert compiler.scopes[compiler.scope_index].last_instruction == EmittedInstruction(Opcode.JUMP, 6)
+
+
+def test__scopes():
+    compiler = Compiler()
+    assert compiler.scope_index == 0
+    assert compiler.scopes[compiler.scope_index] == CompilationScope()
+
+    compiler.emit(Opcode.MULTIPLY)
+    assert len(compiler.scopes[compiler.scope_index].instructions) == 1
+
+    compiler.enter_scope()
+    assert compiler.scope_index == 1
+    compiler.emit(Opcode.SUBTRACT)
+    assert len(compiler.scopes[compiler.scope_index].instructions) == 1
+    assert compiler.scopes[compiler.scope_index].last_instruction.opcode == Opcode.SUBTRACT
+
+    compiler.leave_scope()
+    assert compiler.scope_index == 0
+
+    compiler.emit(Opcode.ADD)
+    assert len(compiler.scopes[compiler.scope_index].instructions) == 2
+    assert compiler.scopes[compiler.scope_index].last_instruction.opcode == Opcode.ADD
+    assert compiler.scopes[compiler.scope_index].prev_instruction.opcode == Opcode.MULTIPLY
 
 
 def test_change_operand():
     compiler = Compiler()
     compiler.emit(Opcode.JUMP, [0x1234])
-    assert compiler.instructions[1] == 0x12
-    assert compiler.instructions[2] == 0x34
+    assert compiler.scopes[compiler.scope_index].instructions[1] == 0x12
+    assert compiler.scopes[compiler.scope_index].instructions[2] == 0x34
     compiler.change_operand(0, 0x5678)
-    assert compiler.instructions[1] == 0x56
-    assert compiler.instructions[2] == 0x78
+    assert compiler.scopes[compiler.scope_index].instructions[1] == 0x56
+    assert compiler.scopes[compiler.scope_index].instructions[2] == 0x78
 
 
 def test_emit_position():
@@ -483,6 +506,71 @@ INDEX_EXPRESSIONS_TESTS = [
          Integer(1) ]},
 ]
 
+
 @pytest.mark.parametrize("test", INDEX_EXPRESSIONS_TESTS)
 def test_index_expressions(test):
+    _compile_and_assert(test)
+
+
+FUNCTIONS_TESTS = [
+    {"expression": "fn() { return 5 + 10; }",
+     "instructions": [
+        make(Opcode.CONSTANT, [2]),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(5),
+         Integer(10),
+         CompiledFunction.from_instructions([
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.CONSTANT, [1]),
+            make(Opcode.ADD),
+            make(Opcode.RETURN_VALUE)])
+         ] },
+    {"expression": "fn() { 5 + 10 }",
+     "instructions": [
+        make(Opcode.CONSTANT, [2]),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(5),
+         Integer(10),
+         CompiledFunction.from_instructions([
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.CONSTANT, [1]),
+            make(Opcode.ADD),
+            make(Opcode.RETURN_VALUE)])
+         ] },
+    {"expression": "fn() { 1; 2 }",
+     "instructions": [
+        make(Opcode.CONSTANT, [2]),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(1),
+         Integer(2),
+         CompiledFunction.from_instructions([
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.POP),
+            make(Opcode.CONSTANT, [1]),
+            make(Opcode.RETURN_VALUE)])
+         ] },
+]
+
+
+@pytest.mark.parametrize("test", FUNCTIONS_TESTS)
+def test_functions(test):
+    _compile_and_assert(test)
+
+
+VOID_FUNCTIONS_TESTS = [
+    {"expression": "fn() { }",
+     "instructions": [
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.POP) ],
+     "constants": [
+         CompiledFunction.from_instructions([
+            make(Opcode.RETURN)])
+         ] },
+]
+
+@pytest.mark.parametrize("test", VOID_FUNCTIONS_TESTS)
+def test_void_functions(test):
     _compile_and_assert(test)

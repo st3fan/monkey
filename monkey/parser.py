@@ -143,7 +143,9 @@ class Parser:
 
     def parse_return_statement(self) -> Optional[ReturnStatement]:
         self.next_token()
-        if expression := self.parse_expression_statement():
+        if expression := self.parse_expression(OperatorPrecedence.LOWEST):
+            if self.peek_token.type == TokenType.SEMICOLON:
+                self.next_token()
             return ReturnStatement(expression)
 
     def parse_if_expression(self) -> Optional[IfExpression]:

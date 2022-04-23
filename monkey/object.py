@@ -6,7 +6,8 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from inspect import getfullargspec
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, TypeVar
+from typing_extensions import Self
 
 from .ast import Identifier, BlockStatement
 from .environment import Environment
@@ -23,6 +24,7 @@ class ObjectType(Enum):
     BUILTIN = 7
     ARRAY = 8
     HASH = 9
+    COMPILED_FUNCTION = 10
 
 
 @dataclass(frozen=True)
@@ -101,6 +103,21 @@ class Function(Object):
 
 
 @dataclass(frozen=True)
+class CompiledFunction(Object):
+    instructions: bytes
+
+    @classmethod
+    def from_instructions(cls, instructions: List[bytes]) -> "CompiledFunction": # TODO Python 3.11 has Self
+        return cls(b''.join(instructions))
+
+    def type(self) -> str:
+        return ObjectType.COMPILED_FUNCTION.name
+
+    def __str__(self) -> str:
+        return str(self)  # TODO
+
+
+@dataclass(frozen=True)
 class String(Object):
     value: str
 
@@ -115,13 +132,13 @@ class String(Object):
 class Builtin(Object):
     name: str
     callable: Callable
-    
+
     argument_types: List[Any] = field(init = False, compare=False)
     return_type: Any = field(init = False, compare=False)
 
     def __post_init__(self):
         super().__init__()
-        args_spec = getfullargspec(self.callable)        
+        args_spec = getfullargspec(self.callable)
         object.__setattr__(self, "argument_types", [args_spec.annotations[arg] for arg in args_spec.args])
         object.__setattr__(self, "return_type", args_spec.annotations.get('return', Null))
 

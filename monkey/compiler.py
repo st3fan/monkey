@@ -5,11 +5,12 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
+from gzip import READ
 from typing import Dict, List, Optional
 
 from .ast import *
 from .code import Opcode, make
-from .object import Object, Integer, String
+from .object import CompiledFunction, Object, Integer, String
 
 
 @dataclass
@@ -51,54 +52,81 @@ class SymbolTable:
 
 
 @dataclass
+class CompilationScope:
+    instructions: bytearray = field(default_factory=bytearray)
+    last_instruction: Optional[EmittedInstruction] = field(default=None)
+    prev_instruction: Optional[EmittedInstruction] = field(default=None)
+
+
+@dataclass
 class CompilerState:
     symbol_table: SymbolTable = SymbolTable()
     constants: List[Object] = field(default_factory=list)
 
 
+# TODO self.scopes[self.scope_index] can be much shorter
+
+
 class Compiler:
     state: CompilerState
-    instructions: bytearray
-    last_instruction: Optional[EmittedInstruction]
-    prev_instruction: Optional[EmittedInstruction]
+    scopes: List[CompilationScope]
+    scope_index: int
 
     def __init__(self, state: Optional[CompilerState] = None):
         self.state = state if state else CompilerState()
-        self.instructions = bytearray()
         self.symbol_table = state.symbol_table if state else SymbolTable()
-        self.last_instruction = None
-        self.prev_instruction = None
+        self.scopes = [CompilationScope()]
+        self.scope_index = 0
 
-    def add_constant(self, object: Union[Integer, String]) -> int:
-        self.state.constants.append(object)
+    def enter_scope(self):
+        self.scopes.append(CompilationScope())
+        self.scope_index += 1
+
+    def leave_scope(self) -> bytes:
+        assert self.scope_index != 0
+        scope = self.scopes.pop()
+        self.scope_index -= 1
+        return scope.instructions
+
+    def add_constant(self, constant: Union[Integer, String, CompiledFunction]) -> int:
+        self.state.constants.append(constant)
         return len(self.state.constants) - 1
 
     def add_instruction(self, instruction: bytes) -> int:
-        pos = len(self.instructions)
-        self.instructions += instruction # This works but is weird - should we just use bytes() ? Or an Alias?
+        pos = len(self.scopes[self.scope_index].instructions)
+        self.scopes[self.scope_index].instructions += instruction # This works but is weird - should we just use bytes() ? Or an Alias?
         return pos
 
     def set_last_instruction(self, opcode: Opcode, position: int):
-        self.prev_instruction = self.last_instruction
-        self.last_instruction = EmittedInstruction(opcode, position)
+        self.scopes[self.scope_index].prev_instruction = self.scopes[self.scope_index].last_instruction
+        self.scopes[self.scope_index].last_instruction = EmittedInstruction(opcode, position)
 
     # TODO I really don't like any of this stuff around POP
     def last_instruction_is_pop(self) -> bool:
-        return self.last_instruction is not None and self.last_instruction.opcode == Opcode.POP
+        return self.scopes[self.scope_index].last_instruction is not None and self.scopes[self.scope_index].last_instruction.opcode == Opcode.POP
+
+    def last_instruction_is_return_value(self) -> bool:
+        return self.scopes[self.scope_index].last_instruction is not None and self.scopes[self.scope_index].last_instruction.opcode == Opcode.RETURN_VALUE
 
     def remove_last_pop(self):
-        assert self.last_instruction is not None # TODO ???
-        self.instructions = self.instructions[:self.last_instruction.position]
-        self.last_instruction = self.prev_instruction
+        assert self.scopes[self.scope_index].last_instruction is not None # TODO ???
+        self.scopes[self.scope_index].instructions = self.scopes[self.scope_index].instructions[:self.scopes[self.scope_index].last_instruction.position]
+        self.scopes[self.scope_index].last_instruction = self.scopes[self.scope_index].prev_instruction
 
     def replace_instruction(self, position: int, new_instruction: bytes):
-        self.instructions[position:position+len(new_instruction)] = new_instruction
+        self.scopes[self.scope_index].instructions[position:position+len(new_instruction)] = new_instruction
+
+    def replace_last_pop_with_return_value(self):
+        last_pos = self.scopes[self.scope_index].last_instruction.position
+        self.replace_instruction(last_pos, make(Opcode.RETURN_VALUE))
+        self.scopes[self.scope_index].last_instruction.opcode = Opcode.RETURN_VALUE
 
     def change_operand(self, position: int, operand: int):
-        opcode = Opcode(int(self.instructions[position]))
+        opcode = Opcode(int(self.scopes[self.scope_index].instructions[position]))
         new_instruction = make(opcode, [operand])
         self.replace_instruction(position, new_instruction)
 
+    # TODO Are there actually opcodes with multiple operands? If not then we can simplify this.
     def emit(self, opcode: Opcode, operands: List[int] = []) -> int:
         instruction = make(opcode, operands)
         position = self.add_instruction(instruction)
@@ -113,7 +141,7 @@ class Compiler:
             self.remove_last_pop()
         jump_pos = self.emit(Opcode.JUMP, [9999])
 
-        after_consequence_pos = len(self.instructions)
+        after_consequence_pos = len(self.scopes[self.scope_index].instructions)
         self.change_operand(jump_not_truthy_pos, after_consequence_pos)
 
         if not node.alternative:
@@ -122,7 +150,7 @@ class Compiler:
             self.compile(node.alternative)
             if self.last_instruction_is_pop():
                 self.remove_last_pop()
-        after_alternative_pos = len(self.instructions)
+        after_alternative_pos = len(self.scopes[self.scope_index].instructions)
         self.change_operand(jump_pos, after_alternative_pos)
 
     def compile_expression_statement(self, node: ExpressionStatement):
@@ -139,6 +167,24 @@ class Compiler:
             self.compile(key)
             self.compile(value)
         self.emit(Opcode.HASH, [len(node.pairs)])
+
+    def compile_function_literal(self, node: FunctionLiteral):
+        self.enter_scope()
+        self.compile(node.body)
+
+        if self.last_instruction_is_pop():
+            self.replace_last_pop_with_return_value()
+
+        if not self.last_instruction_is_return_value():
+            self.emit(Opcode.RETURN)
+
+        instructions = self.leave_scope()
+        compiled_function = CompiledFunction(instructions)
+        self.emit(Opcode.CONSTANT, [self.add_constant(compiled_function)])
+
+    def compile_return_statement(self, node: ReturnStatement):
+        self.compile(node.return_value)
+        self.emit(Opcode.RETURN_VALUE)
 
     def compile(self, node: Node):
         match node:
@@ -210,8 +256,13 @@ class Compiler:
                 self.compile_if_expression(node)
             case ExpressionStatement():
                 self.compile_expression_statement(node)
+            case FunctionLiteral():
+                self.compile_function_literal(node)
+            case ReturnStatement():
+                self.compile_return_statement(node)
             case _:
-                raise Exception(f"unknown node {node}")
+                raise Exception(f"unknown node {node.__class__.__name__}")
 
     def bytecode(self) -> Bytecode:
-        return Bytecode(self.instructions, self.state.constants)
+        assert self.scope_index == 0 # TODO Right?
+        return Bytecode(self.scopes[self.scope_index].instructions, self.state.constants)

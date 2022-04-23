@@ -177,7 +177,7 @@ class LetStatement(Statement):
 
 @dataclass(frozen = True)
 class ReturnStatement(Statement):
-    value: ExpressionStatement
+    return_value: Expression
 
     def __str__(self):
-        return f"return {str(self.value)};"
+        return f"return {str(self.return_value)};"
