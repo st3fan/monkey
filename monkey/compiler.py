@@ -5,11 +5,12 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
+from re import S
 from typing import Any, Dict, List, Optional
 
 from .ast import *
 from .code import Opcode, make
-from .object import Object, Integer
+from .object import Object, Integer, String
 
 
 @dataclass
@@ -50,23 +51,28 @@ class SymbolTable:
         return self.store.get(name)
 
 
+@dataclass
+class CompilerState:
+    symbol_table: SymbolTable = SymbolTable()
+    constants: List[Object] = field(default_factory=list)
+
+
 class Compiler:
+    state: CompilerState
     instructions: bytearray
-    constants: List[Object]
-    symbol_table: SymbolTable
     last_instruction: Optional[EmittedInstruction]
     prev_instruction: Optional[EmittedInstruction]
 
-    def __init__(self):
+    def __init__(self, state: Optional[CompilerState] = None):
+        self.state = state if state else CompilerState()
         self.instructions = bytearray()
-        self.constants = []
-        self.symbol_table = SymbolTable()
+        self.symbol_table = state.symbol_table if state else SymbolTable()
         self.last_instruction = None
         self.prev_instruction = None
 
-    def add_constant(self, object: Object) -> int:
-        self.constants.append(object)
-        return len(self.constants) - 1
+    def add_constant(self, object: Union[Integer, String]) -> int:
+        self.state.constants.append(object)
+        return len(self.state.constants) - 1
 
     def add_instruction(self, instruction: bytes) -> int:
         pos = len(self.instructions)
@@ -124,6 +130,17 @@ class Compiler:
         self.compile(node.expression)
         self.emit(Opcode.POP)
 
+    def compile_array_literal(self, node: ArrayLiteral):
+        for element in node.elements:
+            self.compile(element)
+        self.emit(Opcode.ARRAY, [len(node.elements)])
+
+    def compile_hash_literal(self, node: HashLiteral):
+        for key, value in node.pairs.items():
+            self.compile(key)
+            self.compile(value)
+        self.emit(Opcode.HASH, [len(node.pairs)])
+
     def compile(self, node: Node):
         match node:
             case Program():
@@ -143,6 +160,13 @@ class Compiler:
             case IntegerLiteral():
                 integer = Integer(node.value)
                 self.emit(Opcode.CONSTANT, [self.add_constant(integer)])
+            case StringLiteral():
+                string = String(node.value)
+                self.emit(Opcode.CONSTANT, [self.add_constant(string)])
+            case ArrayLiteral():
+                self.compile_array_literal(node)
+            case HashLiteral():
+                self.compile_hash_literal(node)
             case BooleanLiteral():
                 if node.value:
                     self.emit(Opcode.TRUE)
@@ -185,4 +209,4 @@ class Compiler:
                 self.compile_expression_statement(node)
 
     def bytecode(self) -> Bytecode:
-        return Bytecode(self.instructions, self.constants)
+        return Bytecode(self.instructions, self.state.constants)

@@ -9,7 +9,7 @@ from .lexer import Lexer
 from .parser import Parser
 from .code import Opcode, make
 from .compiler import Compiler, EmittedInstruction
-from .object import Integer
+from .object import Integer, String
 
 
 def test_last_instruction_is_pop():
@@ -305,6 +305,148 @@ GLOBAL_LET_STATEMENTS_TESTS = [
 @pytest.mark.parametrize("test", GLOBAL_LET_STATEMENTS_TESTS)
 def test_global_let_statements(test):
     _compile_and_assert(test)
+
+
+STRING_EXPRESSION_TESTS = [
+    { "expression": '"monkey"',
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.POP) ],
+      "constants": [
+          String("monkey") ] },
+    { "expression": '"mon" + "key"',
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.ADD),
+          make(Opcode.POP) ],
+      "constants": [
+          String("mon"),
+          String("key") ] },
+    { "expression": '"toad" > "worm"',
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.GREATER_THAN),
+          make(Opcode.POP) ],
+      "constants": [
+          String("toad"),
+          String("worm") ] },
+    { "expression": '"moon" < "eggs"',
+      "instructions": [
+          make(Opcode.CONSTANT, [0]),
+          make(Opcode.CONSTANT, [1]),
+          make(Opcode.LESS_THAN),
+          make(Opcode.POP) ],
+      "constants": [
+          String("moon"),
+          String("eggs") ] },
+]
+
+
+@pytest.mark.parametrize("test", STRING_EXPRESSION_TESTS)
+def test_string_expressions(test):
+    _compile_and_assert(test)
+
+
+ARRAY_LITERALS_TESTS = [
+    {"expression": "[]",
+     "instructions": [
+         make(Opcode.ARRAY, [0]),
+         make(Opcode.POP)],
+     "constants": [ ] },
+    {"expression": "[1, 2, 3]",
+     "instructions": [
+         make(Opcode.CONSTANT, [0]),
+         make(Opcode.CONSTANT, [1]),
+         make(Opcode.CONSTANT, [2]),
+         make(Opcode.ARRAY, [3]),
+         make(Opcode.POP)],
+     "constants": [
+         Integer(1),
+         Integer(2),
+         Integer(3),
+     ]},
+    {"expression": "[1 + 2, 3 - 4, 5 * 6]",
+     "instructions": [
+         make(Opcode.CONSTANT, [0]),
+         make(Opcode.CONSTANT, [1]),
+         make(Opcode.ADD),
+         make(Opcode.CONSTANT, [2]),
+         make(Opcode.CONSTANT, [3]),
+         make(Opcode.SUBTRACT),
+         make(Opcode.CONSTANT, [4]),
+         make(Opcode.CONSTANT, [5]),
+         make(Opcode.MULTIPLY),
+         make(Opcode.ARRAY, [3]),
+         make(Opcode.POP)],
+     "constants": [
+         Integer(1),
+         Integer(2),
+         Integer(3),
+         Integer(4),
+         Integer(5),
+         Integer(6),
+     ]},
+]
+
+
+@pytest.mark.parametrize("test", ARRAY_LITERALS_TESTS)
+def test_array_literals(test):
+    _compile_and_assert(test)
+
+
+HASH_LITERALS_TESTS = [
+    {"expression": "{}",
+     "instructions": [
+         make(Opcode.HASH, [0]),
+         make(Opcode.POP)],
+     "constants": [ ] },
+    {"expression": "{1: 2, 3: 4, 5: 6}",
+     "instructions": [
+         make(Opcode.CONSTANT, [0]),
+         make(Opcode.CONSTANT, [1]),
+         make(Opcode.CONSTANT, [2]),
+         make(Opcode.CONSTANT, [3]),
+         make(Opcode.CONSTANT, [4]),
+         make(Opcode.CONSTANT, [5]),
+         make(Opcode.HASH, [3]),
+         make(Opcode.POP)],
+     "constants": [
+         Integer(1),
+         Integer(2),
+         Integer(3),
+         Integer(4),
+         Integer(5),
+         Integer(6),
+     ] },
+    {"expression": "{1: 2 + 3, 4: 5 * 6}",
+     "instructions": [
+         make(Opcode.CONSTANT, [0]),
+         make(Opcode.CONSTANT, [1]),
+         make(Opcode.CONSTANT, [2]),
+         make(Opcode.ADD),
+         make(Opcode.CONSTANT, [3]),
+         make(Opcode.CONSTANT, [4]),
+         make(Opcode.CONSTANT, [5]),
+         make(Opcode.MULTIPLY),
+         make(Opcode.HASH, [2]),
+         make(Opcode.POP)],
+     "constants": [
+         Integer(1),
+         Integer(2),
+         Integer(3),
+         Integer(4),
+         Integer(5),
+         Integer(6),
+     ] },
+]
+
+
+@pytest.mark.parametrize("test", HASH_LITERALS_TESTS)
+def test_hash_literals(test):
+    _compile_and_assert(test)
+
 
 def test_disassemble():
     pass  # TODO

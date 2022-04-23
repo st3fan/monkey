@@ -10,7 +10,7 @@ import pytest
 from .compiler import Compiler
 from .lexer import Lexer
 from .parser import Parser
-from .object import Object, Integer, Boolean, TRUE, FALSE, NULL
+from .object import Array, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
 from .vm import VirtualMachine
 
 
@@ -85,7 +85,7 @@ BOOLEAN_EXPRESSIONS_TEST = [
     ("!!true", True),
     ("!!false", False),
     ("!!5", True),
-    ("!(if (false) { 5; })", True)
+    ("!(if (false) { 5; })", True),
 ]
 
 
@@ -110,4 +110,57 @@ CONDITIONALS_TESTS = [
 
 @pytest.mark.parametrize("expression, expected", CONDITIONALS_TESTS)
 def test_conditionals(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+GLOBALS_TESTS = [
+    ("let one = 1; one", Integer(1)),
+    ("let one = 1; let two = 2; one + two", Integer(3)),
+    ("let one = 1; let two = one + one; one + two", Integer(3)),
+]
+
+
+@pytest.mark.parametrize("expression, expected", GLOBALS_TESTS)
+def test_globals(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+STRING_EXPRESSIONS_TESTS = [
+    ('"cow" > "bee"', TRUE),
+    ('"cow" < "bee"', FALSE),
+    ('"bee" > "cow"', FALSE),
+    ('"bee" < "cow"', TRUE),
+    ('"zebra" > "apple"', TRUE),
+    ('"zebra" < "apple"', FALSE),
+    ('"apple" > "zebra"', FALSE),
+    ('"apple" < "zebra"', TRUE),
+    ('"monkey"', String("monkey")),
+    ('"mon"+"key"', String("monkey")),
+]
+
+
+@pytest.mark.parametrize("expression, expected", STRING_EXPRESSIONS_TESTS)
+def test_string_expressions(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+ARRAY_LITERALS_TESTS = [
+    ("[]", Array([])),
+    ("[1, 2, 3]", Array([Integer(1), Integer(2), Integer(3)])),
+    ("[1 + 2, 3 * 4, 5 + 6]", Array([Integer(3), Integer(12), Integer(11)])),
+]
+
+@pytest.mark.parametrize("expression, expected", ARRAY_LITERALS_TESTS)
+def test_array_literals(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+HASH_LITERALS_TESTS = [
+    ("{}", Hash()),
+    ("{1: 2, 3: 4}", Hash(pairs={Integer(1): Integer(2), Integer(3): Integer(4)})),
+    ("{1: 2 + 3, 4: 5 * 6}", Hash(pairs={Integer(1): Integer(5), Integer(4): Integer(30)})),
+]
+
+@pytest.mark.parametrize("expression, expected", HASH_LITERALS_TESTS)
+def test_hash_literals(expression, expected):
     assert _interpret_expression(expression) == expected

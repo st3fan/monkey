@@ -3,16 +3,26 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
+from dataclasses import dataclass, field
 from struct import unpack_from
 from typing import List, Optional
 
 from .code import Opcode
 from .compiler import Bytecode
 from .evaluator import make_boolean, is_truthy
-from .object import NULL, Object, Integer, Boolean, TRUE, FALSE
+from .object import Array, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
 
 
 DEFAULT_STACK_SIZE = 2048
+DEFAULT_GLOBALS_SIZE = 65536
+
+
+@dataclass
+class VirtualMachineState:
+    globals: List[Object] = field(init=False)
+
+    def __post_init__(self):
+        self.globals = [NULL] * DEFAULT_GLOBALS_SIZE
 
 
 class VirtualMachine:
@@ -21,13 +31,15 @@ class VirtualMachine:
     stack_size: int
     ip: int
     last: Optional[Object]
+    state: VirtualMachineState
 
-    def __init__(self, bytecode: Bytecode, stack_size = DEFAULT_STACK_SIZE):
+    def __init__(self, bytecode: Bytecode, state: Optional[VirtualMachineState] = None):
         self.bytecode = bytecode
         self.stack = []
-        self.stack_size = stack_size
+        self.stack_size = DEFAULT_STACK_SIZE
         self.ip = 0
         self.last = None
+        self.state = state if state else VirtualMachineState()
 
     def push(self, value: Object):
         if len(self.stack) == self.stack_size:
@@ -61,6 +73,8 @@ class VirtualMachine:
     def execute_binary_operation(self, opcode: Opcode):
         right, left = self.pop(), self.pop()
         match (left, opcode, right):
+            case (String(left_value), Opcode.ADD, String(right_value)):
+                self.push(String(left_value + right_value))
             case (Integer(left_value), Opcode.ADD, Integer(right_value)):
                 self.push(Integer(left_value + right_value))
             case (Integer(left_value), Opcode.SUBTRACT, Integer(right_value)):
@@ -79,12 +93,22 @@ class VirtualMachine:
                 self.push(make_boolean(left == right))
             case (left, Opcode.NOT_EQUAL, right):
                 self.push(make_boolean(left != right))
+            case (String(left_value), _, String(right_value)):
+                match opcode:
+                    case Opcode.LESS_THAN:
+                        return self.push(make_boolean(left_value < right_value))
+                    case Opcode.GREATER_THAN:
+                        return self.push(make_boolean(left_value > right_value))
+                    case _:
+                        raise Exception(f"unknown operator: {opcode.name} ({left.type()} {right.type()})")
             case (Integer(left_value), _, Integer(right_value)):
                 match opcode:
                     case Opcode.LESS_THAN:
                         return self.push(make_boolean(left_value < right_value))
                     case Opcode.GREATER_THAN:
                         return self.push(make_boolean(left_value > right_value))
+                    case _:
+                        raise Exception(f"unknown operator: {opcode.name} ({left.type()} {right.type()})")
             case (Boolean(left_value), _, Boolean(right_value)):
                 raise Exception(f"unknown operator: {opcode.name} ({left.type()} {right.type()})")
 
@@ -123,14 +147,33 @@ class VirtualMachine:
                     self.push(TRUE)
                 case Opcode.FALSE:
                     self.push(FALSE)
-                case opcode.JUMP:
+                case Opcode.JUMP:
                     position = self.read_ushort()
                     self.ip = position
-                case opcode.JUMP_NOT_TRUTHY:
+                case Opcode.JUMP_NOT_TRUTHY:
                     position = self.read_ushort()
                     if not is_truthy(self.pop()):
                         self.ip = position
-                case opcode.NULL:
+                case Opcode.NULL:
                     self.push(NULL)
+                case Opcode.SET_GLOBAL:
+                    global_index = self.read_ushort()
+                    self.state.globals[global_index] = self.pop()
+                case Opcode.GET_GLOBAL:
+                    global_index = self.read_ushort()
+                    self.push(self.state.globals[global_index])
+                case Opcode.ARRAY:
+                    array_length = self.read_ushort()
+                    elements = list([self.pop() for _ in range(array_length)]) # Ewwwww
+                    elements.reverse()
+                    self.push(Array(elements))
+                case Opcode.HASH:
+                    hash_length = self.read_ushort()
+                    hash = Hash()
+                    for _ in range(hash_length):
+                        value = self.pop()
+                        key = self.pop()
+                        hash.pairs[key] = value
+                    self.push(hash)
                 case _:
                     raise Exception(f"unhandled opcode: {opcode}")
