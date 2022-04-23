@@ -448,5 +448,41 @@ def test_hash_literals(test):
     _compile_and_assert(test)
 
 
-def test_disassemble():
-    pass  # TODO
+INDEX_EXPRESSIONS_TESTS = [
+    {"expression": "[1, 2, 3][1 + 1]",
+     "instructions": [
+         make(Opcode.CONSTANT, [0]),
+         make(Opcode.CONSTANT, [1]),
+         make(Opcode.CONSTANT, [2]),
+         make(Opcode.ARRAY, [3]),
+         make(Opcode.CONSTANT, [3]),
+         make(Opcode.CONSTANT, [4]),
+         make(Opcode.ADD),
+         make(Opcode.INDEX),
+         make(Opcode.POP) ],
+     "constants": [
+         Integer(1),
+         Integer(2),
+         Integer(3),
+         Integer(1),
+         Integer(1) ]},
+    {"expression": "{1: 2}[2 - 1]",
+     "instructions": [
+         make(Opcode.CONSTANT, [0]),
+         make(Opcode.CONSTANT, [1]),
+         make(Opcode.HASH, [1]),
+         make(Opcode.CONSTANT, [2]),
+         make(Opcode.CONSTANT, [3]),
+         make(Opcode.SUBTRACT),
+         make(Opcode.INDEX),
+         make(Opcode.POP) ],
+     "constants": [
+         Integer(1),
+         Integer(2),
+         Integer(2),
+         Integer(1) ]},
+]
+
+@pytest.mark.parametrize("test", INDEX_EXPRESSIONS_TESTS)
+def test_index_expressions(test):
+    _compile_and_assert(test)

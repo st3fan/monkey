@@ -126,6 +126,20 @@ class VirtualMachine:
         operand = self.pop()
         self.push(make_boolean(not is_truthy(operand)))
 
+    def execute_index_expression(self):
+        index = self.pop()
+        container = self.pop()
+        match container, index:
+            case Array(elements), Integer(index_value):
+                if index_value < 0 or index_value > len(elements)-1:
+                    self.push(NULL)
+                else:
+                    self.push(elements[index_value])
+            case Hash(pairs), index:
+                self.push(pairs.get(index, NULL))
+            case _:
+                raise Exception(f"index operator not supported: {container.type()}")
+
     def run(self):
         self.ip = 0
         while self.ip < len(self.bytecode.instructions):
@@ -175,5 +189,7 @@ class VirtualMachine:
                         key = self.pop()
                         hash.pairs[key] = value
                     self.push(hash)
+                case Opcode.INDEX:
+                    self.execute_index_expression()
                 case _:
                     raise Exception(f"unhandled opcode: {opcode}")

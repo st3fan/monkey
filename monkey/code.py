@@ -36,6 +36,7 @@ class Opcode(IntEnum):
     SET_GLOBAL = 18
     ARRAY = 19
     HASH = 20
+    INDEX = 21
 
 
 @dataclass
@@ -66,6 +67,7 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.SET_GLOBAL: Definition(Opcode.SET_GLOBAL, [2]),
     Opcode.ARRAY: Definition(Opcode.ARRAY, [2]),
     Opcode.HASH: Definition(Opcode.HASH, [2]),
+    Opcode.INDEX: Definition(Opcode.INDEX),
 }
 
 

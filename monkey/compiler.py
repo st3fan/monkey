@@ -203,6 +203,10 @@ class Compiler:
                         self.emit(Opcode.NOT_EQUAL)
                     case _: # TODO Is this actually possible?
                         raise Exception(f"unknown operator {node.operator}")
+            case IndexExpression():
+                self.compile(node.left)
+                self.compile(node.index)
+                self.emit(Opcode.INDEX)
             case IfExpression():
                 self.compile_if_expression(node)
             case ExpressionStatement():

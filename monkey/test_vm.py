@@ -164,3 +164,22 @@ HASH_LITERALS_TESTS = [
 @pytest.mark.parametrize("expression, expected", HASH_LITERALS_TESTS)
 def test_hash_literals(expression, expected):
     assert _interpret_expression(expression) == expected
+
+
+INDEX_EXPRESSIONS_TESTS = [
+    ("[1, 2, 3][1]", Integer(2)),
+    ("[1, 2, 3][0 + 2]", Integer(3)),
+    ("[[1, 1, 1]][0][0]", Integer(1)),
+    ("[][0]", NULL),
+    ("[1, 2, 3][99]", NULL),
+    ("[1][-1]", NULL),
+    ("{1: 1, 2: 2}[1]", Integer(1)),
+    ("{1: 1, 2: 2}[2]", Integer(2)),
+    ("{1: 1}[0]", NULL),
+    ("{}[0]", NULL),
+]
+
+
+@pytest.mark.parametrize("expression, expected", INDEX_EXPRESSIONS_TESTS)
+def test_index_expressions(expression, expected):
+    assert _interpret_expression(expression) == expected
