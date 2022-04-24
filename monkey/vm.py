@@ -10,11 +10,18 @@ from typing import List, Optional
 from .code import Opcode
 from .compiler import Bytecode
 from .evaluator import make_boolean, is_truthy
-from .object import Array, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
+from .object import Array, CompiledFunction, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
 
 
 DEFAULT_STACK_SIZE = 2048
 DEFAULT_GLOBALS_SIZE = 65536
+DEFAULT_MAX_FRAMES = 1024
+
+
+@dataclass
+class Frame:
+    fn: CompiledFunction
+    ip: int = field(default=-1)
 
 
 @dataclass
@@ -26,23 +33,32 @@ class VirtualMachineState:
 
 
 class VirtualMachine:
-    bytecode: Bytecode
+    constants: List[Object]
     stack: List[Object]
-    stack_size: int
-    ip: int
-    last: Optional[Object]
-    state: VirtualMachineState
+    frames: List[Frame]
+    globals: List[Object]
+    last: Optional[Object] # TODO Would be nice to get rid of this. Only exists for REPL.
 
     def __init__(self, bytecode: Bytecode, state: Optional[VirtualMachineState] = None):
-        self.bytecode = bytecode
+        self.constants = bytecode.constants
         self.stack = []
-        self.stack_size = DEFAULT_STACK_SIZE
-        self.ip = 0
+        self.globals = state.globals if state else [NULL] * DEFAULT_GLOBALS_SIZE
+        self.frames = [Frame(CompiledFunction(bytecode.instructions))]
         self.last = None
-        self.state = state if state else VirtualMachineState()
+
+    def current_frame(self):
+        assert len(self.frames) != 0
+        return self.frames[-1]
+
+    def push_frame(self, frame: Frame):
+        self.frames.append(frame)
+
+    def pop_frame(self) -> Frame:
+        assert len(self.frames) != 0
+        return self.frames.pop()
 
     def push(self, value: Object):
-        if len(self.stack) == self.stack_size:
+        if len(self.stack) == DEFAULT_STACK_SIZE:
             raise Exception("Stack overflow")
         self.stack.append(value)
 
@@ -60,14 +76,9 @@ class VirtualMachine:
             return None
         return self.stack[-1]
 
-    def read_opcode(self) -> Opcode:
-        opcode = Opcode(self.bytecode.instructions[self.ip])
-        self.ip += 1
-        return opcode
-
     def read_ushort(self) -> int:
-        (constant_index,) = unpack_from(">H", self.bytecode.instructions, self.ip)
-        self.ip += 2
+        (constant_index,) = unpack_from(">H", self.current_frame().fn.instructions, self.current_frame().ip+1)
+        self.current_frame().ip += 2
         return constant_index
 
     def execute_binary_operation(self, opcode: Opcode):
@@ -114,7 +125,7 @@ class VirtualMachine:
 
     def execute_constant(self):
         operand = self.read_ushort()
-        self.push(self.bytecode.constants[operand])
+        self.push(self.constants[operand])
 
     def execute_minus(self):
         operand = self.pop()
@@ -141,9 +152,12 @@ class VirtualMachine:
                 raise Exception(f"index operator not supported: {container.type()}")
 
     def run(self):
-        self.ip = 0
-        while self.ip < len(self.bytecode.instructions):
-            opcode = self.read_opcode()
+        while self.current_frame().ip < len(self.current_frame().fn.instructions)-1:
+            self.current_frame().ip += 1
+
+            ip = self.current_frame().ip
+            opcode = Opcode(self.current_frame().fn.instructions[ip])
+
             match opcode:
                 case Opcode.CONSTANT:
                     self.execute_constant()
@@ -163,19 +177,19 @@ class VirtualMachine:
                     self.push(FALSE)
                 case Opcode.JUMP:
                     position = self.read_ushort()
-                    self.ip = position
+                    self.current_frame().ip = position - 1
                 case Opcode.JUMP_NOT_TRUTHY:
                     position = self.read_ushort()
                     if not is_truthy(self.pop()):
-                        self.ip = position
+                        self.current_frame().ip = position - 1
                 case Opcode.NULL:
                     self.push(NULL)
                 case Opcode.SET_GLOBAL:
                     global_index = self.read_ushort()
-                    self.state.globals[global_index] = self.pop()
+                    self.globals[global_index] = self.pop()
                 case Opcode.GET_GLOBAL:
                     global_index = self.read_ushort()
-                    self.push(self.state.globals[global_index])
+                    self.push(self.globals[global_index])
                 case Opcode.ARRAY:
                     array_length = self.read_ushort()
                     elements = list([self.pop() for _ in range(array_length)]) # Ewwwww
