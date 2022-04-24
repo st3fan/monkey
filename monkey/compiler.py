@@ -186,6 +186,10 @@ class Compiler:
         self.compile(node.return_value)
         self.emit(Opcode.RETURN_VALUE)
 
+    def compile_call_expression(self, node: CallExpression):
+        self.compile(node.function)
+        self.emit(Opcode.CALL)
+
     def compile(self, node: Node):
         match node:
             case Program():
@@ -260,6 +264,8 @@ class Compiler:
                 self.compile_function_literal(node)
             case ReturnStatement():
                 self.compile_return_statement(node)
+            case CallExpression():
+                self.compile_call_expression(node)
             case _:
                 raise Exception(f"unknown node {node.__class__.__name__}")
 

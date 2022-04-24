@@ -524,8 +524,7 @@ FUNCTIONS_TESTS = [
             make(Opcode.CONSTANT, [0]),
             make(Opcode.CONSTANT, [1]),
             make(Opcode.ADD),
-            make(Opcode.RETURN_VALUE)])
-         ] },
+            make(Opcode.RETURN_VALUE)]) ] },
     {"expression": "fn() { 5 + 10 }",
      "instructions": [
         make(Opcode.CONSTANT, [2]),
@@ -537,8 +536,7 @@ FUNCTIONS_TESTS = [
             make(Opcode.CONSTANT, [0]),
             make(Opcode.CONSTANT, [1]),
             make(Opcode.ADD),
-            make(Opcode.RETURN_VALUE)])
-         ] },
+            make(Opcode.RETURN_VALUE)]) ] },
     {"expression": "fn() { 1; 2 }",
      "instructions": [
         make(Opcode.CONSTANT, [2]),
@@ -550,8 +548,7 @@ FUNCTIONS_TESTS = [
             make(Opcode.CONSTANT, [0]),
             make(Opcode.POP),
             make(Opcode.CONSTANT, [1]),
-            make(Opcode.RETURN_VALUE)])
-         ] },
+            make(Opcode.RETURN_VALUE)]) ] },
 ]
 
 
@@ -573,4 +570,36 @@ VOID_FUNCTIONS_TESTS = [
 
 @pytest.mark.parametrize("test", VOID_FUNCTIONS_TESTS)
 def test_void_functions(test):
+    _compile_and_assert(test)
+
+
+FUNCTION_CALLS_TESTS = [
+    {"expression": "fn() { 24 }()",
+     "instructions": [
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CALL),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(24),
+         CompiledFunction.from_instructions([
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.RETURN_VALUE)])
+         ] },
+    {"expression": "let noArg = fn() { 24 }; noArg();",
+     "instructions": [
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.SET_GLOBAL, [0]),
+        make(Opcode.GET_GLOBAL, [0]),
+        make(Opcode.CALL),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(24),
+         CompiledFunction.from_instructions([
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.RETURN_VALUE)])
+         ] },
+]
+
+@pytest.mark.parametrize("test", FUNCTION_CALLS_TESTS)
+def test_function_calls(test):
     _compile_and_assert(test)
