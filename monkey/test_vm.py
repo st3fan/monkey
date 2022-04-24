@@ -183,3 +183,47 @@ INDEX_EXPRESSIONS_TESTS = [
 @pytest.mark.parametrize("expression, expected", INDEX_EXPRESSIONS_TESTS)
 def test_index_expressions(expression, expected):
     assert _interpret_expression(expression) == expected
+
+
+FUNCTION_CALLS_TESTS = [
+    ("let fivePlusTen = fn() { 5 + 10; }; fivePlusTen();", Integer(15)),
+    ("let one = fn() { 1; }; let two = fn() { 2; }; one() + two()", Integer(3)),
+    ("let a = fn() { 1 }; let b = fn() { a() + 1 }; let c = fn() { b() + 1 }; c();", Integer(3)),
+]
+
+
+@pytest.mark.parametrize("expression, expected", FUNCTION_CALLS_TESTS)
+def test_function_calls(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+FUNCTION_CALLS_WITH_RETURN_TESTS = [
+    ("let earlyExit = fn() { return 99; 100; }; earlyExit();", Integer(99)),
+    ("let earlyExit = fn() { return 99; return 100; }; earlyExit();", Integer(99)),
+]
+
+
+@pytest.mark.parametrize("expression, expected", FUNCTION_CALLS_WITH_RETURN_TESTS)
+def test_function_with_return_calls(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+FUNCTION_CALLS_WITHOUT_RETURN_TESTS = [
+    ("let noReturn = fn() { }; noReturn();", NULL),
+    ("let noReturn = fn() { }; let noReturnTwo = fn() { noReturn(); }; noReturn(); noReturnTwo();", NULL),
+]
+
+
+@pytest.mark.parametrize("expression, expected", FUNCTION_CALLS_WITHOUT_RETURN_TESTS)
+def test_function_without_return_calls(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+VOID_FUNCTION_CALLS_TESTS = [
+    # TODO
+]
+
+
+@pytest.mark.parametrize("expression, expected", VOID_FUNCTION_CALLS_TESTS)
+def test_void_function_calls(expression, expected):
+    assert _interpret_expression(expression) == expected
