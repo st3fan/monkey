@@ -613,7 +613,7 @@ FUNCTION_CALLS_TESTS = [
         make(Opcode.CALL, [1]),
         make(Opcode.POP) ],
      "constants": [
-         CompiledFunction.from_instructions([ make(Opcode.RETURN) ]),
+         CompiledFunction.from_instructions([ make(Opcode.RETURN) ], 1),
         Integer(24) ] },
     {"expression": "let manyArg = fn(a, b, c) { }; manyArg(24, 25, 26);",
      "instructions": [
@@ -626,7 +626,38 @@ FUNCTION_CALLS_TESTS = [
         make(Opcode.CALL, [3]),
         make(Opcode.POP) ],
      "constants": [
-         CompiledFunction.from_instructions([ make(Opcode.RETURN) ]),
+         CompiledFunction.from_instructions([ make(Opcode.RETURN) ], 3),
+        Integer(24), Integer(25), Integer(26) ] },
+    {"expression": "let oneArg = fn(a) { a }; oneArg(24);",
+     "instructions": [
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.SET_GLOBAL, [0]),
+        make(Opcode.GET_GLOBAL, [0]),
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CALL, [1]),
+        make(Opcode.POP) ],
+     "constants": [
+         CompiledFunction.from_instructions([ make(Opcode.GET_LOCAL, [0]), make(Opcode.RETURN_VALUE) ], 1),
+        Integer(24) ] },
+    {"expression": "let manyArg = fn(a, b, c) { a; b; c }; manyArg(24, 25, 26);",
+     "instructions": [
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.SET_GLOBAL, [0]),
+        make(Opcode.GET_GLOBAL, [0]),
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CONSTANT, [2]),
+        make(Opcode.CONSTANT, [3]),
+        make(Opcode.CALL, [3]),
+        make(Opcode.POP) ],
+     "constants": [
+        CompiledFunction.from_instructions([
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.POP),
+            make(Opcode.GET_LOCAL, [1]),
+            make(Opcode.POP),
+            make(Opcode.GET_LOCAL, [2]),
+            make(Opcode.RETURN_VALUE)
+        ], 3),
         Integer(24), Integer(25), Integer(26) ] },
 ]
 

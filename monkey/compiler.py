@@ -180,6 +180,11 @@ class Compiler:
 
     def compile_function_literal(self, node: FunctionLiteral):
         self.enter_scope()
+
+        # Define the function parameters
+        for parameter in node.parameters:
+            self.symbol_table.define(parameter.value)
+
         self.compile(node.body)
 
         if self.last_instruction_is_pop():
