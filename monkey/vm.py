@@ -161,14 +161,17 @@ class VirtualMachine:
             case _:
                 raise Exception(f"index operator not supported: {container.type()}")
 
-    def execute_call(self):
-        self.current_frame().ip += 1
-        function = self.peek_stack()
+    def call_function(self, num_args):
+        function = self.stack[self.sp - 1 - num_args]
         if not isinstance(function, CompiledFunction):
             raise Exception("calling non function")
-        frame = Frame(function, self.sp)
+
+        frame = Frame(function, self.sp - num_args)
         self.push_frame(frame)
         self.sp = frame.bp + function.num_locals
+
+    def execute_call(self):
+        self.call_function(self.read_ubyte())
 
     def execute_return_value(self):
         return_value = self.pop_stack()

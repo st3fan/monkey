@@ -241,6 +241,17 @@ def test_calling_functions_with_bindings(expression, expected):
     assert _interpret_expression(expression) == expected
 
 
+CALLING_FUNCTIONS_WITH_ARGUMENTS_AND_BINDINGS_TESTS = [
+    ("let identity = fn(a) { a; }; identity(4);", Integer(4)),
+    ("let sum = fn(a, b) { a + b; }; sum(1, 2);", Integer(3))
+]
+
+
+@pytest.mark.parametrize("expression, expected", CALLING_FUNCTIONS_WITH_ARGUMENTS_AND_BINDINGS_TESTS)
+def test_calling_functions_with_arguments_and_bindings(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
 FIRST_CLASS_FUNCTIONS_TESTS = [
     ("let returnsThreeReturner = fn() { let returnsThree = fn() { 3; }; returnsThree; }; returnsThreeReturner()();", Integer(3)),
 ]
