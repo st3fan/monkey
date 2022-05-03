@@ -583,7 +583,7 @@ FUNCTION_CALLS_TESTS = [
     {"expression": "fn() { 24 }()",
      "instructions": [
         make(Opcode.CONSTANT, [1]),
-        make(Opcode.CALL),
+        make(Opcode.CALL, [0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(24),
@@ -596,7 +596,7 @@ FUNCTION_CALLS_TESTS = [
         make(Opcode.CONSTANT, [1]),
         make(Opcode.SET_GLOBAL, [0]),
         make(Opcode.GET_GLOBAL, [0]),
-        make(Opcode.CALL),
+        make(Opcode.CALL, [0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(24),
@@ -604,6 +604,30 @@ FUNCTION_CALLS_TESTS = [
             make(Opcode.CONSTANT, [0]),
             make(Opcode.RETURN_VALUE)])
          ] },
+    {"expression": "let oneArg = fn(a) { }; oneArg(24);",
+     "instructions": [
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.SET_GLOBAL, [0]),
+        make(Opcode.GET_GLOBAL, [0]),
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CALL, [1]),
+        make(Opcode.POP) ],
+     "constants": [
+         CompiledFunction.from_instructions([ make(Opcode.RETURN) ]),
+        Integer(24) ] },
+    {"expression": "let manyArg = fn(a, b, c) { }; manyArg(24, 25, 26);",
+     "instructions": [
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.SET_GLOBAL, [0]),
+        make(Opcode.GET_GLOBAL, [0]),
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CONSTANT, [2]),
+        make(Opcode.CONSTANT, [3]),
+        make(Opcode.CALL, [3]),
+        make(Opcode.POP) ],
+     "constants": [
+         CompiledFunction.from_instructions([ make(Opcode.RETURN) ]),
+        Integer(24), Integer(25), Integer(26) ] },
 ]
 
 @pytest.mark.parametrize("test", FUNCTION_CALLS_TESTS)

@@ -162,6 +162,7 @@ class VirtualMachine:
                 raise Exception(f"index operator not supported: {container.type()}")
 
     def execute_call(self):
+        self.current_frame().ip += 1
         function = self.peek_stack()
         if not isinstance(function, CompiledFunction):
             raise Exception("calling non function")

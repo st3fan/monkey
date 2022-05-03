@@ -199,7 +199,9 @@ class Compiler:
 
     def compile_call_expression(self, node: CallExpression):
         self.compile(node.function)
-        self.emit(Opcode.CALL)
+        for argument in node.arguments:
+            self.compile(argument)
+        self.emit(Opcode.CALL, [len(node.arguments)])
 
     def compile_let_statement(self, node: LetStatement):
         self.compile(node.value)

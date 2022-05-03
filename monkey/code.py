@@ -73,7 +73,7 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.ARRAY: Definition(Opcode.ARRAY, [2]),
     Opcode.HASH: Definition(Opcode.HASH, [2]),
     Opcode.INDEX: Definition(Opcode.INDEX),
-    Opcode.CALL: Definition(Opcode.CALL),
+    Opcode.CALL: Definition(Opcode.CALL, [1]),
     Opcode.RETURN_VALUE: Definition(Opcode.RETURN_VALUE),
     Opcode.RETURN: Definition(Opcode.RETURN),
     Opcode.GET_LOCAL: Definition(Opcode.GET_LOCAL, [1]),
