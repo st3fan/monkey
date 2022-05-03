@@ -40,6 +40,8 @@ class Opcode(IntEnum):
     CALL = 22
     RETURN_VALUE = 23
     RETURN = 24
+    GET_LOCAL = 25
+    SET_LOCAL = 26
 
 
 @dataclass
@@ -74,6 +76,8 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.CALL: Definition(Opcode.CALL),
     Opcode.RETURN_VALUE: Definition(Opcode.RETURN_VALUE),
     Opcode.RETURN: Definition(Opcode.RETURN),
+    Opcode.GET_LOCAL: Definition(Opcode.GET_LOCAL, [1]),
+    Opcode.SET_LOCAL: Definition(Opcode.SET_LOCAL, [1]),
 }
 
 
@@ -95,6 +99,8 @@ def make(opcode: Opcode, operands: Optional[List[int]] = None) -> bytes:
     instructions = bytes([opcode.value])
     for i, o in enumerate(operands):
         match definition.operand_widths[i]:
+            case 1:
+                instructions += pack(">B", o)
             case 2:
                 instructions += pack(">H", o) # TODO Nicer to have an Enum with SHORT, USHORT? Value could be pack spec.
             case unexpected:

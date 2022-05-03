@@ -27,6 +27,7 @@ class Bytecode:
 
 class SymbolScope(Enum):
     GLOBAL = "GLOBAL"
+    LOCAL = "LOCAL"
 
 
 @dataclass
@@ -38,17 +39,21 @@ class Symbol:
 
 @dataclass
 class SymbolTable:
+    outer: Optional["SymbolTable"] = field(default=None)
     store: Dict[str, Symbol] = field(default_factory=dict)
 
     def define(self, name: str) -> Symbol:
-        if name in self.store:
-            return self.store[name] # TODO Assuming we want this .. not sure?
-        symbol = Symbol(name, SymbolScope.GLOBAL, len(self.store))
+        # if name in self.store:
+        #     return self.store[name] # TODO Assuming we want this .. not sure?
+        symbol = Symbol(name, SymbolScope.GLOBAL if self.outer is None else SymbolScope.LOCAL, len(self.store))
         self.store[name] = symbol
         return symbol
 
     def resolve(self, name: str) -> Optional[Symbol]:
-        return self.store.get(name)
+        if symbol := self.store.get(name):
+            return symbol
+        if self.outer:
+            return self.outer.resolve(name)
 
 
 @dataclass
@@ -71,6 +76,7 @@ class Compiler:
     state: CompilerState
     scopes: List[CompilationScope]
     scope_index: int
+    symbol_table: SymbolTable
 
     def __init__(self, state: Optional[CompilerState] = None):
         self.state = state if state else CompilerState()
@@ -81,11 +87,15 @@ class Compiler:
     def enter_scope(self):
         self.scopes.append(CompilationScope())
         self.scope_index += 1
+        self.symbol_table = SymbolTable(self.symbol_table)
 
     def leave_scope(self) -> bytes:
         assert self.scope_index != 0
         scope = self.scopes.pop()
         self.scope_index -= 1
+        if self.symbol_table.outer is None:
+            raise Exception("Internal compiler error: self.symbol_table.outer is None")
+        self.symbol_table = self.symbol_table.outer
         return scope.instructions
 
     def add_constant(self, constant: Union[Integer, String, CompiledFunction]) -> int:
@@ -178,8 +188,9 @@ class Compiler:
         if not self.last_instruction_is_return_value():
             self.emit(Opcode.RETURN)
 
+        num_locals = len(self.symbol_table.store)
         instructions = self.leave_scope()
-        compiled_function = CompiledFunction(instructions)
+        compiled_function = CompiledFunction(instructions, num_locals)
         self.emit(Opcode.CONSTANT, [self.add_constant(compiled_function)])
 
     def compile_return_statement(self, node: ReturnStatement):
@@ -190,6 +201,11 @@ class Compiler:
         self.compile(node.function)
         self.emit(Opcode.CALL)
 
+    def compile_let_statement(self, node: LetStatement):
+        self.compile(node.value)
+        symbol = self.symbol_table.define(node.name.value)
+        self.emit(Opcode.SET_GLOBAL if symbol.scope == SymbolScope.GLOBAL else Opcode.SET_LOCAL, [symbol.index])
+
     def compile(self, node: Node):
         match node:
             case Program():
@@ -199,13 +215,11 @@ class Compiler:
                 for statement in node.statements:
                     self.compile(statement)
             case LetStatement():
-                self.compile(node.value)
-                symbol = self.symbol_table.define(node.name.value)
-                self.emit(Opcode.SET_GLOBAL, [symbol.index])
+                self.compile_let_statement(node)
             case Identifier():
                 if (symbol := self.symbol_table.resolve(node.value)) is None:
                     raise Exception(f"undefined variable: {node.value}")
-                self.emit(Opcode.GET_GLOBAL, [symbol.index])
+                self.emit(Opcode.GET_GLOBAL if symbol.scope == SymbolScope.GLOBAL else Opcode.GET_LOCAL, [symbol.index])
             case IntegerLiteral():
                 integer = Integer(node.value)
                 self.emit(Opcode.CONSTANT, [self.add_constant(integer)])

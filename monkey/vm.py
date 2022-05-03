@@ -21,6 +21,7 @@ DEFAULT_MAX_FRAMES = 1024
 @dataclass
 class Frame:
     fn: CompiledFunction
+    bp: int
     ip: int = field(default=-1)
 
 
@@ -33,17 +34,20 @@ class VirtualMachineState:
 
 
 class VirtualMachine:
+    # TODO What is the proper way to setup an object with types? Should this be a dataclass?
     constants: List[Object]
     stack: List[Object]
+    sp: int
     frames: List[Frame]
     globals: List[Object]
     last: Optional[Object] # TODO Would be nice to get rid of this. Only exists for REPL.
 
     def __init__(self, bytecode: Bytecode, state: Optional[VirtualMachineState] = None):
         self.constants = bytecode.constants
-        self.stack = []
+        self.stack = [NULL] * DEFAULT_STACK_SIZE
+        self.sp = 0
         self.globals = state.globals if state else [NULL] * DEFAULT_GLOBALS_SIZE
-        self.frames = [Frame(CompiledFunction(bytecode.instructions))]
+        self.frames = [Frame(CompiledFunction(bytecode.instructions, 0), 0)]
         self.last = None
 
     def current_frame(self):
@@ -58,27 +62,34 @@ class VirtualMachine:
         return self.frames.pop()
 
     def push_stack(self, value: Object):
-        if len(self.stack) == DEFAULT_STACK_SIZE:
+        if self.sp == DEFAULT_STACK_SIZE:
             raise Exception("Stack overflow")
-        self.stack.append(value)
+        self.stack[self.sp] = value
+        self.sp += 1
 
     def pop_stack(self) -> Object:
-        if len(self.stack) == 0:
+        if self.sp == 0:
             raise Exception("Stack underflow")
-        self.last = self.stack.pop()
+        self.last = self.stack[self.sp - 1] # TODO We also need to NULL the element otherwise it sticks around
+        self.sp -= 1
         return self.last
 
     def peek_stack(self) -> Optional[Object]:
-        if len(self.stack) > 0:
-            return self.stack[-1]
+        if self.sp > 0:
+            return self.stack[self.sp - 1]
 
     def last_popped_object(self) -> Optional[Object]:
         return self.last
 
     def read_ushort(self) -> int:
-        (constant_index,) = unpack_from(">H", self.current_frame().fn.instructions, self.current_frame().ip+1)
+        (value,) = unpack_from(">H", self.current_frame().fn.instructions, self.current_frame().ip+1)
         self.current_frame().ip += 2
-        return constant_index
+        return value
+
+    def read_ubyte(self) -> int:
+        (value,) = unpack_from(">B", self.current_frame().fn.instructions, self.current_frame().ip+1)
+        self.current_frame().ip += 1
+        return value
 
     def execute_binary_operation(self, opcode: Opcode):
         right, left = self.pop_stack(), self.pop_stack()
@@ -154,17 +165,19 @@ class VirtualMachine:
         function = self.peek_stack()
         if not isinstance(function, CompiledFunction):
             raise Exception("calling non function")
-        self.push_frame(Frame(function))
+        frame = Frame(function, self.sp)
+        self.push_frame(frame)
+        self.sp = frame.bp + function.num_locals
 
     def execute_return_value(self):
         return_value = self.pop_stack()
-        self.pop_frame() # Remove the frame used for this function call
-        self.pop_stack() # Remove the CompiledFunction
+        frame = self.pop_frame() # Remove the frame used for this function call
+        self.sp = frame.bp - 1 # TODO This keeps references around. Need to NULL?
         self.push_stack(return_value) # Push the return value back on the stack for the caller
 
     def execute_return(self):
-        self.pop_frame() # Remove the frame used for this function call
-        self.pop_stack() # Remove the CompiledFunction
+        frame = self.pop_frame() # Remove the frame used for this function call
+        self.sp = frame.bp - 1 # TODO This keeps references around. Need to NULL?
         self.push_stack(NULL) # Push a NULL
 
     def run(self):
@@ -206,6 +219,14 @@ class VirtualMachine:
                 case Opcode.GET_GLOBAL:
                     global_index = self.read_ushort()
                     self.push_stack(self.globals[global_index])
+                case Opcode.SET_LOCAL:
+                    local_index = self.read_ubyte()
+                    frame = self.current_frame()
+                    self.stack[frame.bp + local_index] = self.pop_stack()
+                case Opcode.GET_LOCAL:
+                    local_index = self.read_ubyte()
+                    frame = self.current_frame()
+                    self.push_stack(self.stack[frame.bp + local_index])
                 case Opcode.ARRAY:
                     array_length = self.read_ushort()
                     elements = list([self.pop_stack() for _ in range(array_length)]) # Ewwwww

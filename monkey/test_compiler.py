@@ -48,6 +48,8 @@ def test__scopes():
     assert compiler.scope_index == 0
     assert compiler.scopes[compiler.scope_index] == CompilationScope()
 
+    global_symbol_table = compiler.symbol_table
+
     compiler.emit(Opcode.MULTIPLY)
     assert len(compiler.scopes[compiler.scope_index].instructions) == 1
 
@@ -57,8 +59,12 @@ def test__scopes():
     assert len(compiler.scopes[compiler.scope_index].instructions) == 1
     assert compiler.scopes[compiler.scope_index].last_instruction.opcode == Opcode.SUBTRACT
 
+    assert compiler.symbol_table.outer == global_symbol_table
+
     compiler.leave_scope()
     assert compiler.scope_index == 0
+    assert compiler.symbol_table == global_symbol_table
+    assert compiler.symbol_table.outer is None
 
     compiler.emit(Opcode.ADD)
     assert len(compiler.scopes[compiler.scope_index].instructions) == 2
@@ -602,4 +608,54 @@ FUNCTION_CALLS_TESTS = [
 
 @pytest.mark.parametrize("test", FUNCTION_CALLS_TESTS)
 def test_function_calls(test):
+    _compile_and_assert(test)
+
+
+LET_STATEMENT_SCOPES_TESTS = [
+    {"expression": "let num = 55; fn() { num }",
+     "instructions": [
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.SET_GLOBAL, [0]),
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(55),
+         CompiledFunction.from_instructions([
+            make(Opcode.GET_GLOBAL, [0]),
+            make(Opcode.RETURN_VALUE)])
+         ] },
+    {"expression": "fn() { let num = 55; num }",
+     "instructions": [
+        make(Opcode.CONSTANT, [1]),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(55),
+         CompiledFunction.from_instructions([
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.SET_LOCAL, [0]),
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.RETURN_VALUE)], 1)
+         ] },
+    {"expression": "fn() { let a = 55; let b = 77; a + b }",
+     "instructions": [
+        make(Opcode.CONSTANT, [2]),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(55),
+         Integer(77),
+         CompiledFunction.from_instructions([
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.SET_LOCAL, [0]),
+            make(Opcode.CONSTANT, [1]),
+            make(Opcode.SET_LOCAL, [1]),
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.GET_LOCAL, [1]),
+            make(Opcode.ADD),
+            make(Opcode.RETURN_VALUE)], 2)
+         ] },
+]
+
+
+@pytest.mark.parametrize("test", LET_STATEMENT_SCOPES_TESTS)
+def test_let_statement_scopes(test):
     _compile_and_assert(test)

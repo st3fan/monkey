@@ -227,3 +227,25 @@ VOID_FUNCTION_CALLS_TESTS = [
 @pytest.mark.parametrize("expression, expected", VOID_FUNCTION_CALLS_TESTS)
 def test_void_function_calls(expression, expected):
     assert _interpret_expression(expression) == expected
+
+
+CALLING_FUNCTIONS_WITH_BINDINGS_TESTS = [
+    ("let one = fn() { let one = 1; one }; one();", Integer(1)),
+    ("let oneAndTwo = fn() { let one = 1; let two = 2; one + two; }; oneAndTwo();", Integer(3)),
+    ("let oneAndTwo = fn() { let one = 1; let two = 2; one + two; }; let threeAndFour = fn() { let three = 3; let four = 4; three + four; }; oneAndTwo() + threeAndFour();", Integer(10)),
+]
+
+
+@pytest.mark.parametrize("expression, expected", CALLING_FUNCTIONS_WITH_BINDINGS_TESTS)
+def test_calling_functions_with_bindings(expression, expected):
+    assert _interpret_expression(expression) == expected
+
+
+FIRST_CLASS_FUNCTIONS_TESTS = [
+    ("let returnsThreeReturner = fn() { let returnsThree = fn() { 3; }; returnsThree; }; returnsThreeReturner()();", Integer(3)),
+]
+
+
+@pytest.mark.parametrize("expression, expected", FIRST_CLASS_FUNCTIONS_TESTS)
+def test_first_class_functions(expression, expected):
+    assert _interpret_expression(expression) == expected

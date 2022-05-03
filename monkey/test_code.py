@@ -34,3 +34,8 @@ def test_make_overflow():
         make(Opcode.CONSTANT, [65536])
     with pytest.raises(struct.error, match="argument out of range"):
         make(Opcode.CONSTANT, [-1])
+
+
+def test_make_get_set_local():
+    assert make(Opcode.SET_LOCAL, [42]) == bytes([Opcode.SET_LOCAL, 42])
+    assert make(Opcode.GET_LOCAL, [42]) == bytes([Opcode.GET_LOCAL, 42])
