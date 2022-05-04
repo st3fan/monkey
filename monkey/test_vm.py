@@ -243,7 +243,11 @@ def test_calling_functions_with_bindings(expression, expected):
 
 CALLING_FUNCTIONS_WITH_ARGUMENTS_AND_BINDINGS_TESTS = [
     ("let identity = fn(a) { a; }; identity(4);", Integer(4)),
-    ("let sum = fn(a, b) { a + b; }; sum(1, 2);", Integer(3))
+    ("let sum = fn(a, b) { a + b; }; sum(1, 2);", Integer(3)),
+    ("let sum = fn(a, b) { let c = a + b; c; }; sum(1, 2);", Integer(3)),
+    ("let sum = fn(a, b) { let c = a + b; c; }; sum(1, 2) + sum(3, 4);", Integer(10)),
+    ("let sum = fn(a, b) { let c = a + b; c; }; let outer = fn() { sum(1, 2) + sum(3, 4); }; outer();", Integer(10)),
+    ("let globalNum = 10; let sum = fn(a, b) { let c = a + b; c + globalNum; }; let outer = fn() { sum(1, 2) + sum(3, 4) + globalNum; }; outer() + globalNum", Integer(50))
 ]
 
 
