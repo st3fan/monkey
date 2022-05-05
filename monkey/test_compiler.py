@@ -277,15 +277,6 @@ def test_conditionals(test):
     _compile_and_assert(test)
 
 
-
-#
-# Actual b'\x00\x00\x00 \x0f \x12\x00\x00' - Has a POP in between CONSTANT and SET_GLOBAL
-# Expected b'\x00\x00\x00\x12\x00\x00'
-#
-# The only place where we insert a POP is in compile_expression_statement()
-#
-
-
 GLOBAL_LET_STATEMENTS_TESTS = [
     { "expression": "let one = 1;",
       "instructions": [
@@ -613,7 +604,7 @@ FUNCTION_CALLS_TESTS = [
         make(Opcode.CALL, [1]),
         make(Opcode.POP) ],
      "constants": [
-         CompiledFunction.from_instructions([ make(Opcode.RETURN) ], 1),
+         CompiledFunction.from_instructions([ make(Opcode.RETURN) ], 1, 1),
         Integer(24) ] },
     {"expression": "let manyArg = fn(a, b, c) { }; manyArg(24, 25, 26);",
      "instructions": [
@@ -626,7 +617,7 @@ FUNCTION_CALLS_TESTS = [
         make(Opcode.CALL, [3]),
         make(Opcode.POP) ],
      "constants": [
-         CompiledFunction.from_instructions([ make(Opcode.RETURN) ], 3),
+         CompiledFunction.from_instructions([ make(Opcode.RETURN) ], 3, 3),
         Integer(24), Integer(25), Integer(26) ] },
     {"expression": "let oneArg = fn(a) { a }; oneArg(24);",
      "instructions": [
@@ -637,7 +628,7 @@ FUNCTION_CALLS_TESTS = [
         make(Opcode.CALL, [1]),
         make(Opcode.POP) ],
      "constants": [
-         CompiledFunction.from_instructions([ make(Opcode.GET_LOCAL, [0]), make(Opcode.RETURN_VALUE) ], 1),
+         CompiledFunction.from_instructions([ make(Opcode.GET_LOCAL, [0]), make(Opcode.RETURN_VALUE) ], 1, 1),
         Integer(24) ] },
     {"expression": "let manyArg = fn(a, b, c) { a; b; c }; manyArg(24, 25, 26);",
      "instructions": [
@@ -657,7 +648,7 @@ FUNCTION_CALLS_TESTS = [
             make(Opcode.POP),
             make(Opcode.GET_LOCAL, [2]),
             make(Opcode.RETURN_VALUE)
-        ], 3),
+        ], 3, 3),
         Integer(24), Integer(25), Integer(26) ] },
 ]
 

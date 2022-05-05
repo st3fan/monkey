@@ -47,7 +47,7 @@ class VirtualMachine:
         self.stack = [NULL] * DEFAULT_STACK_SIZE
         self.sp = 0
         self.globals = state.globals if state else [NULL] * DEFAULT_GLOBALS_SIZE
-        self.frames = [Frame(CompiledFunction(bytecode.instructions, 0), 0)]
+        self.frames = [Frame(CompiledFunction(bytecode.instructions, 0, 0), 0)]
         self.last = None
 
     def current_frame(self):
@@ -161,12 +161,13 @@ class VirtualMachine:
             case _:
                 raise Exception(f"index operator not supported: {container.type()}")
 
-    def call_function(self, num_args):
-        function = self.stack[self.sp - 1 - num_args]
+    def call_function(self, num_arguments):
+        function = self.stack[self.sp - 1 - num_arguments]
         if not isinstance(function, CompiledFunction):
             raise Exception("calling non function")
-
-        frame = Frame(function, self.sp - num_args)
+        if function.num_parameters != num_arguments:
+            raise Exception(f"wrong number of arguments: want={function.num_parameters}, got={num_arguments}")
+        frame = Frame(function, self.sp - num_arguments)
         self.push_frame(frame)
         self.sp = frame.bp + function.num_locals
 

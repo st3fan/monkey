@@ -264,3 +264,15 @@ FIRST_CLASS_FUNCTIONS_TESTS = [
 @pytest.mark.parametrize("expression, expected", FIRST_CLASS_FUNCTIONS_TESTS)
 def test_first_class_functions(expression, expected):
     assert _interpret_expression(expression) == expected
+
+
+CALLING_FUNCTIONS_WITH_WRONG_ARGUMENTS_TESTS = [
+    ("fn() { 1; }(1);", "wrong number of arguments: want=0, got=1"),
+    ("fn(a) { a; }();", "wrong number of arguments: want=1, got=0")
+]
+
+
+@pytest.mark.parametrize("expression, expected", CALLING_FUNCTIONS_WITH_WRONG_ARGUMENTS_TESTS)
+def test_calling_functions_with_wrong_arguments(expression, expected):
+    with pytest.raises(Exception, match=expected):
+        _interpret_expression(expression)

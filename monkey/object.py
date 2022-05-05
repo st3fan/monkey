@@ -106,10 +106,11 @@ class Function(Object):
 class CompiledFunction(Object):
     instructions: bytes
     num_locals: int
+    num_parameters: int
 
     @classmethod
-    def from_instructions(cls, instructions: List[bytes], num_locals: int = 0) -> "CompiledFunction": # TODO Python 3.11 has Self
-        return cls(b''.join(instructions), num_locals)
+    def from_instructions(cls, instructions: List[bytes], num_locals: int = 0, num_parameters: int = 0) -> "CompiledFunction": # TODO Python 3.11 has Self
+        return cls(b''.join(instructions), num_locals, num_parameters)
 
     def type(self) -> str:
         return ObjectType.COMPILED_FUNCTION.name

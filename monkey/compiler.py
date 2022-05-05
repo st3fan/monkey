@@ -195,7 +195,7 @@ class Compiler:
 
         num_locals = len(self.symbol_table.store)
         instructions = self.leave_scope()
-        compiled_function = CompiledFunction(instructions, num_locals)
+        compiled_function = CompiledFunction(instructions, num_locals, len(node.parameters))
         self.emit(Opcode.CONSTANT, [self.add_constant(compiled_function)])
 
     def compile_return_statement(self, node: ReturnStatement):

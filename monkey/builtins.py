@@ -5,7 +5,7 @@
 
 from typing import List, Union
 
-from .object import Array, Builtin, EvaluationError, Object, Integer, String, NULL, Boolean, Hash, Null
+from .object import Array, Builtin, Object, Integer, String, NULL, Boolean, Hash, Null
 
 
 def builtin_len(object: Union[String, Array, Hash]) -> Integer:
