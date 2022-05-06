@@ -9,6 +9,7 @@ from gzip import READ
 from typing import Dict, List, Optional
 
 from .ast import *
+from .builtins import BUILTINS
 from .code import Opcode, make
 from .object import CompiledFunction, Object, Integer, String
 
@@ -42,15 +43,20 @@ class Symbol:
 class SymbolTable:
     outer: Optional["SymbolTable"] = field(default=None)
     store: Dict[str, Symbol] = field(default_factory=dict)
+    next_index: int = 0
 
     def define(self, name: str) -> Symbol:
         # if name in self.store:
         #     return self.store[name] # TODO Assuming we want this .. not sure?
-        symbol = Symbol(name, SymbolScope.GLOBAL if self.outer is None else SymbolScope.LOCAL, len(self.store))
+        symbol = Symbol(name, SymbolScope.GLOBAL if self.outer is None else SymbolScope.LOCAL, self.next_index)
+        self.next_index += 1
         self.store[name] = symbol
         return symbol
 
+    # TODO There is some ambiguity here. Index is either in BUILTINS or in self.store.
     def define_builtin(self, index: int, name: str) -> Symbol:
+        if self.outer is not None:
+            raise Exception("builtins can only be defined in the global symbol table")
         symbol = Symbol(name, SymbolScope.BUILTIN, index)
         self.store[name] = symbol
         return symbol
@@ -89,6 +95,10 @@ class Compiler:
         self.symbol_table = state.symbol_table if state else SymbolTable()
         self.scopes = [CompilationScope()]
         self.scope_index = 0
+
+        # TODO Would be nicer to index builtins by name instead of index
+        for builtin_index, builtin in enumerate(BUILTINS):
+            self.symbol_table.define_builtin(builtin_index, builtin.name)
 
     def enter_scope(self):
         self.scopes.append(CompilationScope())
@@ -219,6 +229,15 @@ class Compiler:
         symbol = self.symbol_table.define(node.name.value)
         self.emit(Opcode.SET_GLOBAL if symbol.scope == SymbolScope.GLOBAL else Opcode.SET_LOCAL, [symbol.index])
 
+    def load_symbol(self, symbol: Symbol):
+        match symbol.scope:
+            case SymbolScope.GLOBAL:
+                self.emit(Opcode.GET_GLOBAL, [symbol.index])
+            case SymbolScope.LOCAL:
+                self.emit(Opcode.GET_LOCAL, [symbol.index])
+            case SymbolScope.BUILTIN:
+                self.emit(Opcode.GET_BUILTIN, [symbol.index])
+
     def compile(self, node: Node):
         match node:
             case Program():
@@ -231,8 +250,8 @@ class Compiler:
                 self.compile_let_statement(node)
             case Identifier():
                 if (symbol := self.symbol_table.resolve(node.value)) is None:
-                    raise Exception(f"undefined variable: {node.value}")
-                self.emit(Opcode.GET_GLOBAL if symbol.scope == SymbolScope.GLOBAL else Opcode.GET_LOCAL, [symbol.index])
+                    raise Exception(f"undefined variable or builtin: {node.value}")
+                return self.load_symbol(symbol)
             case IntegerLiteral():
                 integer = Integer(node.value)
                 self.emit(Opcode.CONSTANT, [self.add_constant(integer)])

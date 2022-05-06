@@ -6,7 +6,7 @@
 from typing import List, Optional, Union, get_args, get_origin
 
 from .ast import *
-from .builtins import BUILTINS
+from .builtins import BUILTINS_BY_NAME
 from .environment import Environment
 from .object import *
 
@@ -227,7 +227,7 @@ class Evaluator:
             case Identifier(name):
                 if val := environment.get(name):
                     return val
-                if builtin := BUILTINS.get(name):
+                if builtin := BUILTINS_BY_NAME.get(name):
                     return builtin
                 return EvaluationError(f"identifier not found: {name}")
             case PrefixExpression(operator, right_expression):

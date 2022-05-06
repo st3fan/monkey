@@ -36,6 +36,11 @@ def builtin_rest(array: Array) -> Union[Array, Null]:
     return NULL
 
 
+def builtin_push(array: Array, value: Object) -> Object:
+    new_array = Array(array.elements.copy() + [value])
+    return new_array
+
+
 def builtin_puts(o: Union[String, Integer, Boolean]) -> Object:
     match o:
         case Integer(value):
@@ -47,10 +52,14 @@ def builtin_puts(o: Union[String, Integer, Boolean]) -> Object:
     return NULL
 
 
-BUILTINS: dict[str, Builtin] = {
-    "len":   Builtin("len", builtin_len),
-    "first": Builtin("first", builtin_first),
-    "last":  Builtin("last", builtin_last),
-    "rest":  Builtin("rest", builtin_rest),
-    "puts":  Builtin("puts", builtin_puts),
-}
+BUILTINS: list[Builtin] = [
+    Builtin("len", builtin_len),
+    Builtin("first", builtin_first),
+    Builtin("last", builtin_last),
+    Builtin("rest", builtin_rest),
+    Builtin("push", builtin_push),
+    Builtin("puts", builtin_puts),
+]
+
+
+BUILTINS_BY_NAME: dict[str, Builtin] = {builtin.name: builtin for builtin in BUILTINS}

@@ -714,7 +714,7 @@ BUILTINS_TESTS = [
         make(Opcode.ARRAY, [0]),
         make(Opcode.CALL, [1]),
         make(Opcode.POP),
-        make(Opcode.GET_BUILTIN, [5]),
+        make(Opcode.GET_BUILTIN, [4]),
         make(Opcode.ARRAY, [0]),
         make(Opcode.CONSTANT, [0]),
         make(Opcode.CALL, [2]),
@@ -729,7 +729,6 @@ BUILTINS_TESTS = [
          CompiledFunction.from_instructions([
             make(Opcode.GET_BUILTIN, [0]),
             make(Opcode.ARRAY, [0]),
-            make(Opcode.CONSTANT, [1]),
             make(Opcode.CALL, [1]),
             make(Opcode.RETURN_VALUE)], 0, 0) ] },
 ]
