@@ -276,3 +276,15 @@ CALLING_FUNCTIONS_WITH_WRONG_ARGUMENTS_TESTS = [
 def test_calling_functions_with_wrong_arguments(expression, expected):
     with pytest.raises(Exception, match=expected):
         _interpret_expression(expression)
+
+
+BUILTIN_FUNCTIONS_TESTS = [
+    ("len([])", Integer(0)),
+    ("len([1])", Integer(1)),
+    ("len([1,2])", Integer(2)),
+]
+
+
+@pytest.mark.parametrize("expression, expected", BUILTIN_FUNCTIONS_TESTS)
+def test_builtin_functions(expression, expected):
+    assert _interpret_expression(expression) == expected

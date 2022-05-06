@@ -7,10 +7,11 @@ from dataclasses import dataclass, field
 from struct import unpack_from
 from typing import List, Optional
 
+from .builtins import BUILTINS
 from .code import Opcode
 from .compiler import Bytecode
 from .evaluator import make_boolean, is_truthy
-from .object import Array, CompiledFunction, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
+from .object import Array, Builtin, CompiledFunction, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
 
 
 DEFAULT_STACK_SIZE = 2048
@@ -161,18 +162,29 @@ class VirtualMachine:
             case _:
                 raise Exception(f"index operator not supported: {container.type()}")
 
-    def call_function(self, num_arguments):
-        function = self.stack[self.sp - 1 - num_arguments]
-        if not isinstance(function, CompiledFunction):
-            raise Exception("calling non function")
+    def call_compiled_function(self, function: CompiledFunction, num_arguments: int):
         if function.num_parameters != num_arguments:
             raise Exception(f"wrong number of arguments: want={function.num_parameters}, got={num_arguments}")
         frame = Frame(function, self.sp - num_arguments)
         self.push_frame(frame)
         self.sp = frame.bp + function.num_locals
 
+    def call_builtin(self, builtin: Builtin, num_arguments: int):
+        arguments = self.stack[self.sp - num_arguments : self.sp]
+        result = builtin.callable(*arguments)
+        self.sp = self.sp - num_arguments - 1
+        self.push_stack(result)
+
     def execute_call(self):
-        self.call_function(self.read_ubyte())
+        num_args = self.read_ubyte()
+        callee = self.stack[self.sp - 1 - num_args]
+        match callee:
+            case CompiledFunction():
+                self.call_compiled_function(callee, num_args)
+            case Builtin():
+                self.call_builtin(callee, num_args)
+            case _:
+                raise Exception("calling non-function and non-built-in")
 
     def execute_return_value(self):
         return_value = self.pop_stack()
@@ -232,6 +244,9 @@ class VirtualMachine:
                     local_index = self.read_ubyte()
                     frame = self.current_frame()
                     self.push_stack(self.stack[frame.bp + local_index])
+                case Opcode.GET_BUILTIN:
+                    builtin_index = self.read_ubyte()
+                    self.push_stack(BUILTINS[builtin_index])
                 case Opcode.ARRAY:
                     array_length = self.read_ushort()
                     elements = list([self.pop_stack() for _ in range(array_length)]) # Ewwwww
