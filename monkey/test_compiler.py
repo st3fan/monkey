@@ -705,3 +705,36 @@ LET_STATEMENT_SCOPES_TESTS = [
 @pytest.mark.parametrize("test", LET_STATEMENT_SCOPES_TESTS)
 def test_let_statement_scopes(test):
     _compile_and_assert(test)
+
+
+BUILTINS_TESTS = [
+    {"expression": "len([]); push([], 3);",
+     "instructions": [
+        make(Opcode.GET_BUILTIN, [0]),
+        make(Opcode.ARRAY, [0]),
+        make(Opcode.CALL, [1]),
+        make(Opcode.POP),
+        make(Opcode.GET_BUILTIN, [5]),
+        make(Opcode.ARRAY, [0]),
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.CALL, [2]),
+        make(Opcode.POP) ],
+     "constants": [
+         Integer(3) ] },
+    {"expression": "fn() { len([]) }",
+     "instructions": [
+        make(Opcode.CONSTANT, [0]),
+        make(Opcode.POP) ],
+     "constants": [
+         CompiledFunction.from_instructions([
+            make(Opcode.GET_BUILTIN, [0]),
+            make(Opcode.ARRAY, [0]),
+            make(Opcode.CONSTANT, [1]),
+            make(Opcode.CALL, [1]),
+            make(Opcode.RETURN_VALUE)], 0, 0) ] },
+]
+
+
+@pytest.mark.parametrize("test", BUILTINS_TESTS)
+def test_builtins(test):
+    _compile_and_assert(test)

@@ -116,7 +116,7 @@ class CompiledFunction(Object):
         return ObjectType.COMPILED_FUNCTION.name
 
     def __str__(self) -> str:
-        return str(self)  # TODO
+        return "TODO"
 
 
 @dataclass(frozen=True)
@@ -127,7 +127,7 @@ class String(Object):
         return ObjectType.STRING.name
 
     def __str__(self) -> str:
-        return str(self.value)
+        return "TODO"
 
 
 @dataclass(frozen=True)

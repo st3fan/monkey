@@ -77,3 +77,16 @@ def test_resolve_nested_local():
     assert local_table2.resolve("d") == Symbol("d", SymbolScope.LOCAL, 1)
     assert local_table2.resolve("e") == Symbol("e", SymbolScope.LOCAL, 0)
     assert local_table2.resolve("f") == Symbol("f", SymbolScope.LOCAL, 1)
+
+
+def test_define_resolve_builtins():
+    global_table = SymbolTable()
+    first_local_table = SymbolTable(outer=global_table)
+    second_local_table = SymbolTable(outer=first_local_table)
+
+    for symbol_index, symbol_name in enumerate(["a", "b", "c", "d"]):
+        global_table.define_builtin(symbol_index, symbol_name)
+
+    for table in (global_table, first_local_table, second_local_table):
+        for symbol_index, symbol_name in enumerate(["a", "b", "c", "d"]):
+            assert table.resolve(symbol_name) == Symbol(symbol_name, SymbolScope.BUILTIN, symbol_index)

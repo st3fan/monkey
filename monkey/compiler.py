@@ -28,6 +28,7 @@ class Bytecode:
 class SymbolScope(Enum):
     GLOBAL = "GLOBAL"
     LOCAL = "LOCAL"
+    BUILTIN = "BUILTIN"
 
 
 @dataclass
@@ -46,6 +47,11 @@ class SymbolTable:
         # if name in self.store:
         #     return self.store[name] # TODO Assuming we want this .. not sure?
         symbol = Symbol(name, SymbolScope.GLOBAL if self.outer is None else SymbolScope.LOCAL, len(self.store))
+        self.store[name] = symbol
+        return symbol
+
+    def define_builtin(self, index: int, name: str) -> Symbol:
+        symbol = Symbol(name, SymbolScope.BUILTIN, index)
         self.store[name] = symbol
         return symbol
 

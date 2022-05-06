@@ -42,6 +42,7 @@ class Opcode(IntEnum):
     RETURN = 24
     GET_LOCAL = 25
     SET_LOCAL = 26
+    GET_BUILTIN = 27
 
 
 @dataclass
@@ -78,6 +79,7 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.RETURN: Definition(Opcode.RETURN),
     Opcode.GET_LOCAL: Definition(Opcode.GET_LOCAL, [1]),
     Opcode.SET_LOCAL: Definition(Opcode.SET_LOCAL, [1]),
+    Opcode.GET_BUILTIN: Definition(Opcode.GET_BUILTIN, [1]),
 }
 
 
