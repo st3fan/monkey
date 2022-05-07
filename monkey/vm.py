@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass, field
 from struct import unpack_from
-from typing import List, Optional
+from typing import List, Optional, Union, get_args, get_origin
 
 from .builtins import BUILTINS
 from .code import Opcode
@@ -170,7 +170,18 @@ class VirtualMachine:
         self.sp = frame.bp + function.num_locals
 
     def call_builtin(self, builtin: Builtin, num_arguments: int):
+        if len(builtin.argument_types) != num_arguments:
+            raise Exception(f"wrong number of arguments. got={num_arguments}, want={len(builtin.argument_types)}")
+
         arguments = self.stack[self.sp - num_arguments : self.sp]
+        for arg, typ in zip(arguments, builtin.argument_types):
+            # Check if the argument matches the expected type, taking Union into account too.
+            if not ((get_origin(typ) is Union and isinstance(arg, get_args(typ))) or isinstance(arg, typ)):
+                if get_origin(typ) is Union:
+                    raise Exception(f"argument to `{builtin.name}` not supported, got {arg.type()}")
+                else:
+                    raise Exception(f"argument to `{builtin.name}` must be {typ.type()}, got {arg.type()}")
+
         result = builtin.callable(*arguments)
         self.sp = self.sp - num_arguments - 1
         self.push_stack(result)

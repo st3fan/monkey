@@ -29,7 +29,8 @@ class ObjectType(Enum):
 
 @dataclass(frozen=True)
 class Object:
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         raise NotImplementedError()
 
     def __str__(self) -> str:
@@ -40,7 +41,8 @@ class Object:
 class Integer(Object):
     value: int
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.INTEGER.name
 
     def __str__(self) -> str:
@@ -51,7 +53,8 @@ class Integer(Object):
 class Boolean(Object):
     value: bool
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.BOOLEAN.name
 
     def __str__(self) -> str:
@@ -60,7 +63,8 @@ class Boolean(Object):
 
 @dataclass(frozen=True)
 class Null(Object):
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.NULL.name
 
     def __str__(self) -> str:
@@ -71,7 +75,8 @@ class Null(Object):
 class ReturnValue(Object):
     value: Object
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.RETURN_VALUE.name
 
     def __str__(self) -> str:
@@ -82,7 +87,8 @@ class ReturnValue(Object):
 class EvaluationError(Object):
     message: str
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.EVALUATION_ERROR.name
 
     def __str__(self) -> str:
@@ -95,7 +101,8 @@ class Function(Object):
     body: BlockStatement
     environment: Environment
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.FUNCTION.name
 
     def __str__(self) -> str:
@@ -112,7 +119,8 @@ class CompiledFunction(Object):
     def from_instructions(cls, instructions: List[bytes], num_locals: int = 0, num_parameters: int = 0) -> "CompiledFunction": # TODO Python 3.11 has Self
         return cls(b''.join(instructions), num_locals, num_parameters)
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.COMPILED_FUNCTION.name
 
     def __str__(self) -> str:
@@ -123,7 +131,8 @@ class CompiledFunction(Object):
 class String(Object):
     value: str
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.STRING.name
 
     def __str__(self) -> str:
@@ -144,7 +153,8 @@ class Builtin(Object):
         object.__setattr__(self, "argument_types", [args_spec.annotations[arg] for arg in args_spec.args])
         object.__setattr__(self, "return_type", args_spec.annotations.get('return', Null))
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.BUILTIN.name
 
     def __str__(self) -> str:
@@ -155,7 +165,8 @@ class Builtin(Object):
 class Array(Object):
     elements: List[Object]
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.ARRAY.name
 
     def __str__(self) -> str:
@@ -166,7 +177,8 @@ class Array(Object):
 class Hash(Object):
     pairs: Dict[Object, Object] = field(default_factory=dict)
 
-    def type(self) -> str:
+    @classmethod
+    def type(cls) -> str:
         return ObjectType.HASH.name
 
     def __str__(self) -> str:

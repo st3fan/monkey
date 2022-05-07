@@ -282,9 +282,36 @@ BUILTIN_FUNCTIONS_TESTS = [
     ("len([])", Integer(0)),
     ("len([1])", Integer(1)),
     ("len([1,2])", Integer(2)),
+    ('len("four")', Integer(4)),
+    ('len("hello world")', Integer(11)),
+    ('len([1, 2, 3])', Integer(3)),
+    ('len([])', Integer(0)),
+    ('puts("hello, world!")', NULL),
+    ('first([1, 2, 3])', Integer(1)),
+    ('first([])', NULL),
+    ('last([1, 2, 3])', Integer(3)),
+    ('last([])', NULL),
+    ('rest([1, 2, 3])', Array([Integer(2), Integer(3)])),
+    ('rest([])', NULL),
+    ('push([], 1)', Array([Integer(1)])),
 ]
 
 
 @pytest.mark.parametrize("expression, expected", BUILTIN_FUNCTIONS_TESTS)
 def test_builtin_functions(expression, expected):
     assert _interpret_expression(expression) == expected
+
+
+BUILTIN_FUNCTIONS_ERRORS_TESTS = [
+    ('len(1)', "argument to `len` not supported, got INTEGER"),
+    ('len(1, 2)', "wrong number of arguments. got=2, want=1"),
+    ('first(1)', "argument to `first` must be ARRAY, got INTEGER"),
+    ('last(1)', "argument to `last` must be ARRAY, got INTEGER"),
+    ('push(1, 1)', "argument to `push` must be ARRAY, got INTEGER")
+]
+
+
+@pytest.mark.parametrize("expression, expected", BUILTIN_FUNCTIONS_ERRORS_TESTS)
+def test_builtin_functions_errors(expression, expected):
+    with pytest.raises(Exception, match=expected):
+        _interpret_expression(expression)
