@@ -318,6 +318,7 @@ def test_builtin_functions_errors(expression, expected):
 
 
 CLOSURES_TESTS = [
+    ("let newClosure = fn(a) { fn() { a; }; }; let closure = newClosure(99); closure();", Integer(99)),
 ]
 
 

@@ -221,11 +221,17 @@ class VirtualMachine:
         self.sp = frame.bp - 1 # TODO This keeps references around. Need to NULL?
         self.push_stack(NULL) # Push a NULL
 
-    def push_closure(self, const_index: int):
+    def push_closure(self, const_index: int, num_free_variables: int):
         constant = self.constants[const_index]
         if not isinstance(constant, CompiledFunction):
             raise Exception(f"not a function: {constant}")
-        closure = Closure(constant, [])
+
+        free_variables = []
+        for i in range(num_free_variables):
+            free_variables.append(self.stack[self.sp-num_free_variables+i])
+        self.sp = self.sp - num_free_variables
+
+        closure = Closure(constant, free_variables)
         self.push_stack(closure)
 
     def run(self):
@@ -278,6 +284,10 @@ class VirtualMachine:
                 case Opcode.GET_BUILTIN:
                     builtin_index = self.read_ubyte()
                     self.push_stack(BUILTINS[builtin_index])
+                case Opcode.GET_FREE:
+                    free_index = self.read_ubyte()
+                    current_closure = self.current_frame().cl
+                    self.push_stack(current_closure.free[free_index])
                 case Opcode.ARRAY:
                     array_length = self.read_ushort()
                     elements = list([self.pop_stack() for _ in range(array_length)]) # Ewwwww
@@ -298,7 +308,7 @@ class VirtualMachine:
                 case Opcode.CLOSURE:
                     const_index = self.read_ushort()
                     num_free_variables = self.read_ubyte()
-                    self.push_closure(const_index)
+                    self.push_closure(const_index, num_free_variables)
                 case Opcode.RETURN_VALUE:
                     self.execute_return_value()
                 case Opcode.RETURN:
