@@ -315,3 +315,12 @@ BUILTIN_FUNCTIONS_ERRORS_TESTS = [
 def test_builtin_functions_errors(expression, expected):
     with pytest.raises(Exception, match=expected):
         _interpret_expression(expression)
+
+
+CLOSURES_TESTS = [
+]
+
+
+@pytest.mark.parametrize("expression, expected", CLOSURES_TESTS)
+def test_closures(expression, expected):
+    assert _interpret_expression(expression) == expected

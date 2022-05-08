@@ -43,6 +43,8 @@ class Opcode(IntEnum):
     GET_LOCAL = 25
     SET_LOCAL = 26
     GET_BUILTIN = 27
+    CLOSURE = 28
+    GET_FREE = 29
 
 
 @dataclass
@@ -80,6 +82,8 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.GET_LOCAL: Definition(Opcode.GET_LOCAL, [1]),
     Opcode.SET_LOCAL: Definition(Opcode.SET_LOCAL, [1]),
     Opcode.GET_BUILTIN: Definition(Opcode.GET_BUILTIN, [1]),
+    Opcode.CLOSURE: Definition(Opcode.CLOSURE, [2, 1]), # Constant Index, Number of Free Variables
+    Opcode.GET_FREE: Definition(Opcode.GET_FREE, [1]),
 }
 
 

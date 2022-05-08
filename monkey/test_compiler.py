@@ -512,7 +512,7 @@ def test_index_expressions(test):
 FUNCTIONS_TESTS = [
     {"expression": "fn() { return 5 + 10; }",
      "instructions": [
-        make(Opcode.CONSTANT, [2]),
+        make(Opcode.CLOSURE, [2, 0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(5),
@@ -524,7 +524,7 @@ FUNCTIONS_TESTS = [
             make(Opcode.RETURN_VALUE)]) ] },
     {"expression": "fn() { 5 + 10 }",
      "instructions": [
-        make(Opcode.CONSTANT, [2]),
+        make(Opcode.CLOSURE, [2, 0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(5),
@@ -536,7 +536,7 @@ FUNCTIONS_TESTS = [
             make(Opcode.RETURN_VALUE)]) ] },
     {"expression": "fn() { 1; 2 }",
      "instructions": [
-        make(Opcode.CONSTANT, [2]),
+        make(Opcode.CLOSURE, [2, 0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(1),
@@ -557,7 +557,7 @@ def test_functions(test):
 VOID_FUNCTIONS_TESTS = [
     {"expression": "fn() { }",
      "instructions": [
-        make(Opcode.CONSTANT, [0]),
+        make(Opcode.CLOSURE, [0, 0]),
         make(Opcode.POP) ],
      "constants": [
          CompiledFunction.from_instructions([
@@ -573,7 +573,7 @@ def test_void_functions(test):
 FUNCTION_CALLS_TESTS = [
     {"expression": "fn() { 24 }()",
      "instructions": [
-        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CLOSURE, [1, 0]),
         make(Opcode.CALL, [0]),
         make(Opcode.POP) ],
      "constants": [
@@ -584,7 +584,7 @@ FUNCTION_CALLS_TESTS = [
          ] },
     {"expression": "let noArg = fn() { 24 }; noArg();",
      "instructions": [
-        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CLOSURE, [1, 0]),
         make(Opcode.SET_GLOBAL, [0]),
         make(Opcode.GET_GLOBAL, [0]),
         make(Opcode.CALL, [0]),
@@ -597,7 +597,7 @@ FUNCTION_CALLS_TESTS = [
          ] },
     {"expression": "let oneArg = fn(a) { }; oneArg(24);",
      "instructions": [
-        make(Opcode.CONSTANT, [0]),
+        make(Opcode.CLOSURE, [0, 0]),
         make(Opcode.SET_GLOBAL, [0]),
         make(Opcode.GET_GLOBAL, [0]),
         make(Opcode.CONSTANT, [1]),
@@ -608,7 +608,7 @@ FUNCTION_CALLS_TESTS = [
         Integer(24) ] },
     {"expression": "let manyArg = fn(a, b, c) { }; manyArg(24, 25, 26);",
      "instructions": [
-        make(Opcode.CONSTANT, [0]),
+        make(Opcode.CLOSURE, [0, 0]),
         make(Opcode.SET_GLOBAL, [0]),
         make(Opcode.GET_GLOBAL, [0]),
         make(Opcode.CONSTANT, [1]),
@@ -621,7 +621,7 @@ FUNCTION_CALLS_TESTS = [
         Integer(24), Integer(25), Integer(26) ] },
     {"expression": "let oneArg = fn(a) { a }; oneArg(24);",
      "instructions": [
-        make(Opcode.CONSTANT, [0]),
+        make(Opcode.CLOSURE, [0, 0]),
         make(Opcode.SET_GLOBAL, [0]),
         make(Opcode.GET_GLOBAL, [0]),
         make(Opcode.CONSTANT, [1]),
@@ -632,7 +632,7 @@ FUNCTION_CALLS_TESTS = [
         Integer(24) ] },
     {"expression": "let manyArg = fn(a, b, c) { a; b; c }; manyArg(24, 25, 26);",
      "instructions": [
-        make(Opcode.CONSTANT, [0]),
+        make(Opcode.CLOSURE, [0, 0]),
         make(Opcode.SET_GLOBAL, [0]),
         make(Opcode.GET_GLOBAL, [0]),
         make(Opcode.CONSTANT, [1]),
@@ -662,7 +662,7 @@ LET_STATEMENT_SCOPES_TESTS = [
      "instructions": [
         make(Opcode.CONSTANT, [0]),
         make(Opcode.SET_GLOBAL, [0]),
-        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CLOSURE, [1, 0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(55),
@@ -672,7 +672,7 @@ LET_STATEMENT_SCOPES_TESTS = [
          ] },
     {"expression": "fn() { let num = 55; num }",
      "instructions": [
-        make(Opcode.CONSTANT, [1]),
+        make(Opcode.CLOSURE, [1, 0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(55),
@@ -684,7 +684,7 @@ LET_STATEMENT_SCOPES_TESTS = [
          ] },
     {"expression": "fn() { let a = 55; let b = 77; a + b }",
      "instructions": [
-        make(Opcode.CONSTANT, [2]),
+        make(Opcode.CLOSURE, [2, 0]),
         make(Opcode.POP) ],
      "constants": [
          Integer(55),
@@ -723,7 +723,7 @@ BUILTINS_TESTS = [
          Integer(3) ] },
     {"expression": "fn() { len([]) }",
      "instructions": [
-        make(Opcode.CONSTANT, [0]),
+        make(Opcode.CLOSURE, [0, 0]),
         make(Opcode.POP) ],
      "constants": [
          CompiledFunction.from_instructions([
@@ -736,4 +736,27 @@ BUILTINS_TESTS = [
 
 @pytest.mark.parametrize("test", BUILTINS_TESTS)
 def test_builtins(test):
+    _compile_and_assert(test)
+
+
+CLOSURES_TEST = [
+    {"expression": "fn(a) { fn(b) { a + b } }",
+     "instructions": [
+        make(Opcode.CLOSURE, [1, 0]),
+        make(Opcode.POP) ],
+     "constants": [
+         CompiledFunction.from_instructions([
+            make(Opcode.GET_FREE, [0]),
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.ADD),
+            make(Opcode.RETURN_VALUE)], 1, 1), # TODO
+         CompiledFunction.from_instructions([
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.CLOSURE, [0, 1]),
+            make(Opcode.RETURN_VALUE)], 1, 1) ] }, # TODO
+]
+
+
+@pytest.mark.parametrize("test", CLOSURES_TEST)
+def test_closures(test):
     _compile_and_assert(test)

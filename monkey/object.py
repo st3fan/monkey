@@ -25,6 +25,7 @@ class ObjectType(Enum):
     ARRAY = 8
     HASH = 9
     COMPILED_FUNCTION = 10
+    CLOSURE = 11
 
 
 @dataclass(frozen=True)
@@ -183,6 +184,19 @@ class Hash(Object):
 
     def __str__(self) -> str:
         return "TODO"
+
+
+@dataclass(frozen=True)
+class Closure(Object):
+    fn: CompiledFunction
+    free: List[Object]
+
+    @classmethod
+    def type(cls) -> str:
+        return ObjectType.HASH.name
+
+    def __str__(self) -> str:
+        return f"<Closure fn={self.fn}>" # TODO
 
 
 NULL = Null()

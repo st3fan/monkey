@@ -39,3 +39,7 @@ def test_make_overflow():
 def test_make_get_set_local():
     assert make(Opcode.SET_LOCAL, [42]) == bytes([Opcode.SET_LOCAL, 42])
     assert make(Opcode.GET_LOCAL, [42]) == bytes([Opcode.GET_LOCAL, 42])
+
+
+def test_closure():
+    assert make(Opcode.CLOSURE, [65534, 255]) == bytes([Opcode.CLOSURE, 255, 254, 255])

@@ -30,6 +30,7 @@ class SymbolScope(Enum):
     GLOBAL = "GLOBAL"
     LOCAL = "LOCAL"
     BUILTIN = "BUILTIN"
+    FREE = "FREE"
 
 
 @dataclass
@@ -43,6 +44,7 @@ class Symbol:
 class SymbolTable:
     outer: Optional["SymbolTable"] = field(default=None)
     store: Dict[str, Symbol] = field(default_factory=dict)
+    free_symbols: List[Symbol] = field(default_factory=list)
     next_index: int = 0
 
     def define(self, name: str) -> Symbol:
@@ -61,12 +63,23 @@ class SymbolTable:
         self.store[name] = symbol
         return symbol
 
-    def resolve(self, name: str) -> Optional[Symbol]:
-        if symbol := self.store.get(name):
-            return symbol
-        if self.outer:
-            return self.outer.resolve(name)
+    def _define_free(self, original_symbol: Symbol) -> Symbol:
+        self.free_symbols.append(original_symbol)
+        symbol = Symbol(original_symbol.name, SymbolScope.FREE, len(self.free_symbols) - 1)
+        self.store[original_symbol.name] = symbol
+        return symbol
 
+    # TODO This can be more Pythonic
+    def resolve(self, name: str) -> Optional[Symbol]:
+        obj = self.store.get(name)
+        if obj is None and self.outer is not None:
+            obj = self.outer.resolve(name)
+            if not obj:
+                return None
+            if obj.scope in (SymbolScope.GLOBAL, SymbolScope.BUILTIN):
+                return obj
+            return self._define_free(obj)
+        return obj
 
 @dataclass
 class CompilationScope:
@@ -209,10 +222,15 @@ class Compiler:
         if not self.last_instruction_is_return_value():
             self.emit(Opcode.RETURN)
 
-        num_locals = len(self.symbol_table.store)
+        free_symbols = self.symbol_table.free_symbols
+        num_locals = self.symbol_table.next_index # TODO Is NumDefinitions in the book
         instructions = self.leave_scope()
+
+        for s in free_symbols:
+            self.load_symbol(s)
+
         compiled_function = CompiledFunction(instructions, num_locals, len(node.parameters))
-        self.emit(Opcode.CONSTANT, [self.add_constant(compiled_function)])
+        self.emit(Opcode.CLOSURE, [self.add_constant(compiled_function), len(free_symbols)])
 
     def compile_return_statement(self, node: ReturnStatement):
         self.compile(node.return_value)
@@ -237,6 +255,8 @@ class Compiler:
                 self.emit(Opcode.GET_LOCAL, [symbol.index])
             case SymbolScope.BUILTIN:
                 self.emit(Opcode.GET_BUILTIN, [symbol.index])
+            case SymbolScope.FREE:
+                self.emit(Opcode.GET_FREE, [symbol.index])
 
     def compile(self, node: Node):
         match node:

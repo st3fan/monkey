@@ -11,7 +11,7 @@ from .builtins import BUILTINS
 from .code import Opcode
 from .compiler import Bytecode
 from .evaluator import make_boolean, is_truthy
-from .object import Array, Builtin, CompiledFunction, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
+from .object import Array, Builtin, Closure, CompiledFunction, Hash, Object, Integer, Boolean, TRUE, FALSE, NULL, String
 
 
 DEFAULT_STACK_SIZE = 2048
@@ -21,9 +21,12 @@ DEFAULT_MAX_FRAMES = 1024
 
 @dataclass
 class Frame:
-    fn: CompiledFunction
+    cl: Closure
     bp: int
     ip: int = field(default=-1)
+
+    def instructions(self) -> bytes:
+        return self.cl.fn.instructions
 
 
 @dataclass
@@ -48,7 +51,10 @@ class VirtualMachine:
         self.stack = [NULL] * DEFAULT_STACK_SIZE
         self.sp = 0
         self.globals = state.globals if state else [NULL] * DEFAULT_GLOBALS_SIZE
-        self.frames = [Frame(CompiledFunction(bytecode.instructions, 0, 0), 0)]
+        main_function = CompiledFunction(bytecode.instructions, 0, 0)
+        main_closure = Closure(fn=main_function, free=[])
+        main_frame = Frame(main_closure, 0)
+        self.frames = [main_frame]
         self.last = None
 
     def current_frame(self):
@@ -83,12 +89,12 @@ class VirtualMachine:
         return self.last
 
     def read_ushort(self) -> int:
-        (value,) = unpack_from(">H", self.current_frame().fn.instructions, self.current_frame().ip+1)
+        (value,) = unpack_from(">H", self.current_frame().cl.fn.instructions, self.current_frame().ip+1)
         self.current_frame().ip += 2
         return value
 
     def read_ubyte(self) -> int:
-        (value,) = unpack_from(">B", self.current_frame().fn.instructions, self.current_frame().ip+1)
+        (value,) = unpack_from(">B", self.current_frame().cl.fn.instructions, self.current_frame().ip+1)
         self.current_frame().ip += 1
         return value
 
@@ -162,12 +168,12 @@ class VirtualMachine:
             case _:
                 raise Exception(f"index operator not supported: {container.type()}")
 
-    def call_compiled_function(self, function: CompiledFunction, num_arguments: int):
-        if function.num_parameters != num_arguments:
-            raise Exception(f"wrong number of arguments: want={function.num_parameters}, got={num_arguments}")
-        frame = Frame(function, self.sp - num_arguments)
-        self.push_frame(frame)
-        self.sp = frame.bp + function.num_locals
+    # def call_compiled_function(self, function: CompiledFunction, num_arguments: int):
+    #     if function.num_parameters != num_arguments:
+    #         raise Exception(f"wrong number of arguments: want={function.num_parameters}, got={num_arguments}")
+    #     frame = Frame(function, self.sp - num_arguments)
+    #     self.push_frame(frame)
+    #     self.sp = frame.bp + function.num_locals
 
     def call_builtin(self, builtin: Builtin, num_arguments: int):
         if len(builtin.argument_types) != num_arguments:
@@ -186,16 +192,23 @@ class VirtualMachine:
         self.sp = self.sp - num_arguments - 1
         self.push_stack(result)
 
+    def call_closure(self, closure: Closure, num_arguments: int):
+        if closure.fn.num_parameters != num_arguments:
+            raise Exception(f"wrong number of arguments: want={closure.fn.num_parameters}, got={num_arguments}")
+        frame = Frame(closure, self.sp - num_arguments)
+        self.push_frame(frame)
+        self.sp = frame.bp + closure.fn.num_locals
+
     def execute_call(self):
         num_args = self.read_ubyte()
         callee = self.stack[self.sp - 1 - num_args]
         match callee:
-            case CompiledFunction():
-                self.call_compiled_function(callee, num_args)
+            case Closure():
+                self.call_closure(callee, num_args)
             case Builtin():
                 self.call_builtin(callee, num_args)
             case _:
-                raise Exception("calling non-function and non-built-in")
+                raise Exception("calling non-closure and non-builtin")
 
     def execute_return_value(self):
         return_value = self.pop_stack()
@@ -208,12 +221,19 @@ class VirtualMachine:
         self.sp = frame.bp - 1 # TODO This keeps references around. Need to NULL?
         self.push_stack(NULL) # Push a NULL
 
+    def push_closure(self, const_index: int):
+        constant = self.constants[const_index]
+        if not isinstance(constant, CompiledFunction):
+            raise Exception(f"not a function: {constant}")
+        closure = Closure(constant, [])
+        self.push_stack(closure)
+
     def run(self):
-        while self.current_frame().ip < len(self.current_frame().fn.instructions)-1:
+        while self.current_frame().ip < len(self.current_frame().cl.fn.instructions)-1:
             self.current_frame().ip += 1
 
             ip = self.current_frame().ip
-            opcode = Opcode(self.current_frame().fn.instructions[ip])
+            opcode = Opcode(self.current_frame().cl.fn.instructions[ip])
 
             match opcode:
                 case Opcode.CONSTANT:
@@ -275,6 +295,10 @@ class VirtualMachine:
                     self.execute_index_expression()
                 case Opcode.CALL:
                     self.execute_call()
+                case Opcode.CLOSURE:
+                    const_index = self.read_ushort()
+                    num_free_variables = self.read_ubyte()
+                    self.push_closure(const_index)
                 case Opcode.RETURN_VALUE:
                     self.execute_return_value()
                 case Opcode.RETURN:
