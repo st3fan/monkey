@@ -329,3 +329,13 @@ CLOSURES_TESTS = [
 @pytest.mark.parametrize("expression, expected", CLOSURES_TESTS)
 def test_closures(expression, expected):
     assert _interpret_expression(expression) == expected
+
+
+RECURSIVE_FUNCTIONS_TESTS = [
+    ("let countDown = fn(x) { if (x == 0) { return 0; } else { countDown(x - 1); } }; countDown(1);", Integer(0)),
+]
+
+
+@pytest.mark.parametrize("expression, expected", RECURSIVE_FUNCTIONS_TESTS)
+def test_recursive_functions(expression, expected):
+    assert _interpret_expression(expression) == expected

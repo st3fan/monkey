@@ -243,8 +243,8 @@ class Compiler:
         self.emit(Opcode.CALL, [len(node.arguments)])
 
     def compile_let_statement(self, node: LetStatement):
-        self.compile(node.value)
         symbol = self.symbol_table.define(node.name.value)
+        self.compile(node.value)
         self.emit(Opcode.SET_GLOBAL if symbol.scope == SymbolScope.GLOBAL else Opcode.SET_LOCAL, [symbol.index])
 
     def load_symbol(self, symbol: Symbol):
