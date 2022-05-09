@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from .ast import BooleanLiteral, ExpressionStatement, Identifier, InfixExpression, LetStatement, IntegerLiteral, PrefixExpression
+from .ast import BooleanLiteral, ExpressionStatement, FunctionLiteral, Identifier, InfixExpression, LetStatement, IntegerLiteral, PrefixExpression
 from .lexer import Lexer
 from .token import Token, TokenType
 from .parser import Parser
@@ -246,3 +246,12 @@ def test_hash_literals():
     ]
     for expression in expressions:
         assert str(parse_program(expression[0])) == expression[1]
+
+
+def test_function_literal_with_name():
+    program = parse_program("let myFunction = fn() { };")
+    assert len(program.statements) == 1
+    assert isinstance(program.statements[0], LetStatement)
+    assert program.statements[0].name == Identifier("myFunction")
+    assert isinstance(program.statements[0].value, FunctionLiteral)
+    assert program.statements[0].value.name == "myFunction"

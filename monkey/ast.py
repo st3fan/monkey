@@ -70,6 +70,7 @@ class StringLiteral(Expression):
 class FunctionLiteral(Expression):
     parameters: List[Identifier]
     body: BlockStatement
+    name: Optional[str] = None
 
     def __str__(self):
         return f"fn ({', '.join(str(p) for p in self.parameters)}) {str(self.body)}"

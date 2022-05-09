@@ -139,6 +139,10 @@ class Parser:
             if self.expect_peek(TokenType.ASSIGN):
                 self.next_token()
                 if expression := self.parse_expression(OperatorPrecedence.LOWEST):
+                    # If we parsed a function, we can give it a name. Since the FunctionLiteral is
+                    # a frozen dataclass, we have no other option than to create a new instance.
+                    if isinstance(expression, FunctionLiteral):
+                        expression = FunctionLiteral(expression.parameters, expression.body, identifier.value)
                     return LetStatement(identifier, expression)
 
     def parse_return_statement(self) -> Optional[ReturnStatement]:

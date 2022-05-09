@@ -333,6 +333,8 @@ def test_closures(expression, expected):
 
 RECURSIVE_FUNCTIONS_TESTS = [
     ("let countDown = fn(x) { if (x == 0) { return 0; } else { countDown(x - 1); } }; countDown(1);", Integer(0)),
+    ("let countDown = fn(x) { if (x == 0) { return 0; } else { countDown(x - 1); } }; let wrapper = fn() { countDown(1); }; wrapper();", Integer(0)),
+    ("let wrapper = fn() { let countDown = fn(x) { if (x == 0) { return 0; } else { countDown(x - 1); } }; countDown(1); }; wrapper();", Integer(0)),
 ]
 
 

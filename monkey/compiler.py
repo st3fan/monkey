@@ -31,6 +31,7 @@ class SymbolScope(Enum):
     LOCAL = "LOCAL"
     BUILTIN = "BUILTIN"
     FREE = "FREE"
+    FUNCTION = "FUNCTION" # TODO This feels like hack.
 
 
 @dataclass
@@ -67,6 +68,11 @@ class SymbolTable:
         self.free_symbols.append(original_symbol)
         symbol = Symbol(original_symbol.name, SymbolScope.FREE, len(self.free_symbols) - 1)
         self.store[original_symbol.name] = symbol
+        return symbol
+
+    def define_function_name(self, function_name: str) -> Symbol:
+        symbol = Symbol(function_name, SymbolScope.FUNCTION, 0)
+        self.store[function_name] = symbol
         return symbol
 
     # TODO This can be more Pythonic
@@ -210,6 +216,9 @@ class Compiler:
     def compile_function_literal(self, node: FunctionLiteral):
         self.enter_scope()
 
+        if function_name := node.name:
+            self.symbol_table.define_function_name(function_name)
+
         # Define the function parameters
         for parameter in node.parameters:
             self.symbol_table.define(parameter.value)
@@ -257,6 +266,8 @@ class Compiler:
                 self.emit(Opcode.GET_BUILTIN, [symbol.index])
             case SymbolScope.FREE:
                 self.emit(Opcode.GET_FREE, [symbol.index])
+            case SymbolScope.FUNCTION:
+                self.emit(Opcode.CURRENT_CLOSURE)
 
     def compile(self, node: Node):
         match node:

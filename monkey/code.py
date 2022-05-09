@@ -45,6 +45,7 @@ class Opcode(IntEnum):
     GET_BUILTIN = 27
     CLOSURE = 28
     GET_FREE = 29
+    CURRENT_CLOSURE = 30
 
 
 @dataclass
@@ -84,6 +85,7 @@ DEFINITIONS: Dict[Opcode, Definition] = {
     Opcode.GET_BUILTIN: Definition(Opcode.GET_BUILTIN, [1]),
     Opcode.CLOSURE: Definition(Opcode.CLOSURE, [2, 1]), # Constant Index, Number of Free Variables
     Opcode.GET_FREE: Definition(Opcode.GET_FREE, [1]),
+    Opcode.CURRENT_CLOSURE: Definition(Opcode.CURRENT_CLOSURE),
 }
 
 

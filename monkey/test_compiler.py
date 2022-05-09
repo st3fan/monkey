@@ -739,7 +739,7 @@ def test_builtins(test):
     _compile_and_assert(test)
 
 
-CLOSURES_TEST = [
+CLOSURES_TESTS = [
     {"expression": "fn(a) { fn(b) { a + b } }",
      "instructions": [
         make(Opcode.CLOSURE, [1, 0]),
@@ -749,14 +749,65 @@ CLOSURES_TEST = [
             make(Opcode.GET_FREE, [0]),
             make(Opcode.GET_LOCAL, [0]),
             make(Opcode.ADD),
-            make(Opcode.RETURN_VALUE)], 1, 1), # TODO
+            make(Opcode.RETURN_VALUE)], 1, 1),
          CompiledFunction.from_instructions([
             make(Opcode.GET_LOCAL, [0]),
             make(Opcode.CLOSURE, [0, 1]),
-            make(Opcode.RETURN_VALUE)], 1, 1) ] }, # TODO
+            make(Opcode.RETURN_VALUE)], 1, 1) ] }
 ]
 
 
-@pytest.mark.parametrize("test", CLOSURES_TEST)
+@pytest.mark.parametrize("test", CLOSURES_TESTS)
 def test_closures(test):
+    _compile_and_assert(test)
+
+
+RECURSIVE_FUNCTIONS_TESTS = [
+    {"expression": "let countDown = fn(x) { countDown(x - 1); }; countDown(1);",
+     "instructions": [
+         make(Opcode.CLOSURE, [1, 0]),
+         make(Opcode.SET_GLOBAL, [0]),
+         make(Opcode.GET_GLOBAL, [0]),
+         make(Opcode.CONSTANT, [2]),
+         make(Opcode.CALL, [1]),
+         make(Opcode.POP) ],
+     "constants": [
+         Integer(1),
+         CompiledFunction.from_instructions([
+            make(Opcode.CURRENT_CLOSURE),
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.SUBTRACT),
+            make(Opcode.CALL, [1]),
+            make(Opcode.RETURN_VALUE) ], 1, 1),
+        Integer(1) ] },
+    {"expression": "let wrapper = fn() { let countDown = fn(x) { countDown(x - 1); }; countDown(1); }; wrapper();",
+     "instructions": [
+         make(Opcode.CLOSURE, [3, 0]),
+         make(Opcode.SET_GLOBAL, [0]),
+         make(Opcode.GET_GLOBAL, [0]),
+         make(Opcode.CALL, [0]),
+         make(Opcode.POP) ],
+     "constants": [
+         Integer(1),
+         CompiledFunction.from_instructions([
+            make(Opcode.CURRENT_CLOSURE),
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.CONSTANT, [0]),
+            make(Opcode.SUBTRACT),
+            make(Opcode.CALL, [1]),
+            make(Opcode.RETURN_VALUE) ], 1, 1),
+        Integer(1),
+        CompiledFunction.from_instructions([
+            make(Opcode.CLOSURE, [1, 0]),
+            make(Opcode.SET_LOCAL, [0]),
+            make(Opcode.GET_LOCAL, [0]),
+            make(Opcode.CONSTANT, [2]),
+            make(Opcode.CALL, [1]),
+            make(Opcode.RETURN_VALUE) ], 1, 0) ] }
+]
+
+
+@pytest.mark.parametrize("test", RECURSIVE_FUNCTIONS_TESTS)
+def test_recursive_functions(test):
     _compile_and_assert(test)

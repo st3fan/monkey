@@ -146,3 +146,16 @@ def test_resolve_unresolvable_free():
 
     for name in expected_unresolvable:
         assert bar_table.resolve(name) is None
+
+
+def test_define_and_resolve_function_name():
+    global_table = SymbolTable()
+    global_table.define_function_name("a")
+    assert global_table.resolve("a") == Symbol("a", SymbolScope.FUNCTION, 0)
+
+
+def test_shadowing_function_name():
+    global_table = SymbolTable()
+    global_table.define_function_name("a")
+    global_table.define("a")
+    assert global_table.resolve("a") == Symbol("a", SymbolScope.GLOBAL, 0)

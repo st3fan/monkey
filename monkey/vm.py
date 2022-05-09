@@ -309,6 +309,9 @@ class VirtualMachine:
                     const_index = self.read_ushort()
                     num_free_variables = self.read_ubyte()
                     self.push_closure(const_index, num_free_variables)
+                case Opcode.CURRENT_CLOSURE:
+                    current_closure = self.current_frame().cl
+                    self.push_stack(current_closure)
                 case Opcode.RETURN_VALUE:
                     self.execute_return_value()
                 case Opcode.RETURN:
