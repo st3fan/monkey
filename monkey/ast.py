@@ -70,6 +70,7 @@ class StringLiteral(Expression):
 class FunctionLiteral(Expression):
     parameters: List[Identifier]
     body: BlockStatement
+    name: Optional[str] = None
 
     def __str__(self):
         return f"fn ({', '.join(str(p) for p in self.parameters)}) {str(self.body)}"
@@ -169,7 +170,7 @@ class Program(Node):
 @dataclass(frozen = True)
 class LetStatement(Statement):
     name: Identifier
-    value: ExpressionStatement
+    value: Expression
 
     def __str__(self):
         return f"let {self.name} = {str(self.value)};"
@@ -177,7 +178,7 @@ class LetStatement(Statement):
 
 @dataclass(frozen = True)
 class ReturnStatement(Statement):
-    value: ExpressionStatement
+    return_value: Expression
 
     def __str__(self):
-        return f"return {str(self.value)};"
+        return f"return {str(self.return_value)};"

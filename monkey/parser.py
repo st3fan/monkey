@@ -88,7 +88,7 @@ class Parser:
         self.next_token()
         self.next_token()
 
-    def next_token(self): 
+    def next_token(self):
         self.current_token = self.peek_token
         self.peek_token = self.lexer.next_token()
 
@@ -138,12 +138,18 @@ class Parser:
             identifier = Identifier(self.current_token.literal)
             if self.expect_peek(TokenType.ASSIGN):
                 self.next_token()
-                if expression := self.parse_expression_statement():
+                if expression := self.parse_expression(OperatorPrecedence.LOWEST):
+                    # If we parsed a function, we can give it a name. Since the FunctionLiteral is
+                    # a frozen dataclass, we have no other option than to create a new instance.
+                    if isinstance(expression, FunctionLiteral):
+                        expression = FunctionLiteral(expression.parameters, expression.body, identifier.value)
                     return LetStatement(identifier, expression)
 
     def parse_return_statement(self) -> Optional[ReturnStatement]:
         self.next_token()
-        if expression := self.parse_expression_statement():
+        if expression := self.parse_expression(OperatorPrecedence.LOWEST):
+            if self.peek_token.type == TokenType.SEMICOLON:
+                self.next_token()
             return ReturnStatement(expression)
 
     def parse_if_expression(self) -> Optional[IfExpression]:
@@ -183,7 +189,7 @@ class Parser:
         if self.peek_token.type == end_token:
             self.next_token()
             return expressions
-        
+
         self.next_token()
         expressions.append(self.parse_expression(OperatorPrecedence.LOWEST))
 
@@ -213,7 +219,7 @@ class Parser:
 
             if not self.expect_peek(TokenType.COLON):
                 return None
-            
+
             self.next_token()
             value = self.parse_expression(OperatorPrecedence.LOWEST)
 
@@ -224,7 +230,7 @@ class Parser:
 
         if not self.expect_peek(TokenType.RBRACE):
             return None
-        
+
         return HashLiteral(pairs)
 
     def parse_identifier(self) -> Expression:
@@ -282,8 +288,9 @@ class Parser:
         return left
 
     def parse_expression_statement(self) -> Optional[ExpressionStatement]:
-        statement = ExpressionStatement(self.parse_expression(OperatorPrecedence.LOWEST))
-        # Ending a statement with a semicolon is optional
-        if self.peek_token.type == TokenType.SEMICOLON:
-            self.next_token()
-        return statement
+        if expression := self.parse_expression(OperatorPrecedence.LOWEST):
+            statement = ExpressionStatement(expression)
+            # Ending a statement with a semicolon is optional
+            if self.peek_token.type == TokenType.SEMICOLON:
+                self.next_token()
+            return statement

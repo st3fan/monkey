@@ -6,9 +6,15 @@
 from .environment import Environment
 from .evaluator import Evaluator, NULL
 from .lexer import Lexer
-from .object import Object, Integer, EvaluationError, Array
+from .object import Object, Integer, EvaluationError, Array, String, Builtin
 from .parser import Parser
 
+
+def test_builtin_typing():
+    def hello(name: String, age: Integer) -> Object:
+        return String(f"Hello, {name}. I see you are {age} years old.")
+    builtin = Builtin("hello", hello)
+    assert builtin.argument_types == [String, Integer]
 
 def _eval(program: str, expected_object: Object):
     environment = Environment()

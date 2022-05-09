@@ -1,0 +1,4 @@
+[project]
+name = "monkey"
+version = "0.0.1"
+description = "Writing an Interpreter in Go in Python"

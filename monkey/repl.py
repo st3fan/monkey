@@ -3,17 +3,25 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from monkey.environment import Environment
-from monkey.evaluator import Evaluator
+from monkey.compiler import Compiler, CompilerState
 from monkey.lexer import Lexer
 from monkey.parser import Parser
+from monkey.vm import VirtualMachine, VirtualMachineState
 
 
 def start():
-    environment = Environment()
+    compiler_state = CompilerState()
+    virtual_machine_state = VirtualMachineState()
+
     while True:
         s = input("> ")
         program = Parser(Lexer(s)).parse_program()
-        # TODO Check for parse errors and report
-        if evaluated := Evaluator().eval(program, environment):
-            print(evaluated)
+
+        compiler = Compiler(compiler_state)
+        compiler.compile(program)
+
+        virtual_machine = VirtualMachine(compiler.bytecode(), virtual_machine_state)
+        virtual_machine.run()
+
+        if result := virtual_machine.last_popped_object():
+            print(result)

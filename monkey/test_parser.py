@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 
-from .ast import BooleanLiteral, ExpressionStatement, Identifier, InfixExpression, LetStatement, IntegerLiteral, PrefixExpression
+from .ast import BooleanLiteral, ExpressionStatement, FunctionLiteral, Identifier, InfixExpression, LetStatement, IntegerLiteral, PrefixExpression
 from .lexer import Lexer
 from .token import Token, TokenType
 from .parser import Parser
@@ -35,10 +35,13 @@ def test_parse_let_statements():
     assert len(program.statements) == 3
     assert isinstance(program.statements[0], LetStatement)
     assert program.statements[0].name == Identifier("x")
+    assert program.statements[0].value == IntegerLiteral(5)
     assert isinstance(program.statements[1], LetStatement)
     assert program.statements[1].name == Identifier("y")
+    assert program.statements[1].value == IntegerLiteral(10)
     assert isinstance(program.statements[2], LetStatement)
     assert program.statements[2].name == Identifier("z")
+    assert program.statements[2].value == IntegerLiteral(838383)
 
 
 def test_parse_return_statements():
@@ -243,3 +246,12 @@ def test_hash_literals():
     ]
     for expression in expressions:
         assert str(parse_program(expression[0])) == expression[1]
+
+
+def test_function_literal_with_name():
+    program = parse_program("let myFunction = fn() { };")
+    assert len(program.statements) == 1
+    assert isinstance(program.statements[0], LetStatement)
+    assert program.statements[0].name == Identifier("myFunction")
+    assert isinstance(program.statements[0].value, FunctionLiteral)
+    assert program.statements[0].value.name == "myFunction"
